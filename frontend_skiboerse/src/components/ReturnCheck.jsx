@@ -5,7 +5,8 @@ import { apiFetch } from '../api';
 import { useAuth } from '../AuthContext';
 
 function ReturnCheck() {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+  const isReporter = user?.role === 'reporter';
   const [barcodeInput, setBarcodeInput] = useState('');
   const [scanMode, setScanMode] = useState(null);
   const [foundItem, setFoundItem] = useState(null);
@@ -19,7 +20,8 @@ function ReturnCheck() {
   const pollRef = useRef(null);
 
   useEffect(() => {
-    // Poll return-check status every 15 seconds
+    // Poll return-check status every 15 seconds (only for reporters)
+    if (!isReporter) return;
     const checkStatus = async () => {
       try {
         const res = await apiFetch('/api/return-check/status/');
