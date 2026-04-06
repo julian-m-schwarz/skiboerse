@@ -4,6 +4,52 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { apiFetch } from '../api';
 import { useAuth } from '../AuthContext';
 
+function ReturnCheckToggle() {
+  const [open, setOpen] = useState(false);
+  const [toggling, setToggling] = useState(false);
+
+  useEffect(() => {
+    apiFetch('/api/return-check/status/')
+      .then(r => r.json())
+      .then(d => setOpen(d.open))
+      .catch(() => {});
+  }, []);
+
+  const handleToggle = async () => {
+    setToggling(true);
+    try {
+      const res = await apiFetch('/api/return-check/toggle/', { method: 'POST' });
+      const data = await res.json();
+      setOpen(data.open);
+    } catch {
+      // ignore
+    } finally {
+      setToggling(false);
+    }
+  };
+
+  return (
+    <div className="landing-return-check-control">
+      <div className="return-check-control-inner">
+        <div className="return-check-control-label">
+          <span className={`return-check-dot ${open ? 'open' : 'closed'}`} />
+          <span>Artikelrückmeldung</span>
+          <span className="return-check-status-text">
+            {open ? 'Freigegeben' : 'Gesperrt'}
+          </span>
+        </div>
+        <button
+          className={`btn ${open ? 'btn-danger' : 'btn-primary'}`}
+          onClick={handleToggle}
+          disabled={toggling}
+        >
+          {toggling ? '...' : open ? 'Sperren' : 'Freigeben'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ReturnCheck() {
   const { user, logout } = useAuth();
   const isReporter = user?.role === 'reporter';
@@ -185,6 +231,8 @@ function ReturnCheck() {
           ← Zurück
         </Link>
       </div>
+
+      {!isReporter && <ReturnCheckToggle />}
 
       {error && <div className="error">{error}</div>}
       {successMessage && <div className="success">{successMessage}</div>}
