@@ -1,11 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
+import { apiFetch } from '../api';
 import './LandingPage.css';
 
 function LandingPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const [returnCheckOpen, setReturnCheckOpen] = useState(false);
+  const [toggling, setToggling] = useState(false);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    apiFetch('/api/return-check/status/')
+      .then(r => r.json())
+      .then(d => setReturnCheckOpen(d.open))
+      .catch(() => {});
+  }, [isAdmin]);
+
+  const handleToggle = async () => {
+    setToggling(true);
+    try {
+      const res = await apiFetch('/api/return-check/toggle/', { method: 'POST' });
+      const data = await res.json();
+      setReturnCheckOpen(data.open);
+    } catch {
+      // ignore
+    } finally {
+      setToggling(false);
+    }
+  };
 
   return (
     <div className="landing-page">
@@ -34,6 +58,27 @@ function LandingPage() {
           </Link>
         )}
       </div>
+
+      {isAdmin && (
+        <div className="landing-return-check-control">
+          <div className="return-check-control-inner">
+            <div className="return-check-control-label">
+              <span className={`return-check-dot ${returnCheckOpen ? 'open' : 'closed'}`} />
+              <span>Artikelrückmeldung</span>
+              <span className="return-check-status-text">
+                {returnCheckOpen ? 'Freigegeben' : 'Gesperrt'}
+              </span>
+            </div>
+            <button
+              className={`btn ${returnCheckOpen ? 'btn-danger' : 'btn-primary'}`}
+              onClick={handleToggle}
+              disabled={toggling}
+            >
+              {toggling ? '...' : returnCheckOpen ? 'Sperren' : 'Freigeben'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

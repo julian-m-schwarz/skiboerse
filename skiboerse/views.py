@@ -434,6 +434,20 @@ def login_view(request):
 
     user = authenticate(request, username=username, password=password)
     if user is not None:
+        # Block reporter login when return check is disabled
+        try:
+            role = user.profile.role
+        except UserProfile.DoesNotExist:
+            role = 'desk'
+
+        if role == 'reporter':
+            from django.core.cache import cache
+            if not cache.get('return_check_open', False):
+                return Response(
+                    {'error': 'Artikelrückmeldung ist derzeit gesperrt. Bitte warten Sie auf die Freigabe.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
         # Delete any existing sessions for this user to allow re-login
         # without O(N) scan of all sessions
         user_id_str = str(user.id)
@@ -583,6 +597,42 @@ def user_change_password(request, pk):
     user.set_password(new_password)
     user.save()
     return Response({'success': True, 'message': 'Passwort geändert'})
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def return_check_status(request):
+    """GET /api/return-check/status/ — returns whether reporter login is open."""
+    from django.core.cache import cache
+    is_open = cache.get('return_check_open', False)
+    return Response({'open': is_open})
+
+
+@api_view(['POST'])
+def return_check_toggle(request):
+    """POST /api/return-check/toggle/ — admin toggles reporter access."""
+    if not is_admin(request.user):
+        return Response({'error': 'Keine Berechtigung'}, status=status.HTTP_403_FORBIDDEN)
+
+    from django.core.cache import cache
+    current = cache.get('return_check_open', False)
+    new_state = not current
+    cache.set('return_check_open', new_state, timeout=None)
+
+    if not new_state:
+        # Log out all reporter sessions
+        for session in Session.objects.filter(expire_date__gt=timezone.now()).iterator():
+            try:
+                data = session.get_decoded()
+                user_id = data.get('_auth_user_id')
+                if user_id:
+                    u = User.objects.get(pk=user_id)
+                    if u.profile.role == 'reporter':
+                        session.delete()
+            except Exception:
+                continue
+
+    return Response({'open': new_state})
 
 
 class FrontendView(TemplateView):

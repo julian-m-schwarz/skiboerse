@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import { apiFetch } from '../api';
+import { useAuth } from '../AuthContext';
 
 function ReturnCheck() {
+  const { logout } = useAuth();
   const [barcodeInput, setBarcodeInput] = useState('');
   const [scanMode, setScanMode] = useState(null);
   const [foundItem, setFoundItem] = useState(null);
@@ -12,13 +14,36 @@ function ReturnCheck() {
   const [successMessage, setSuccessMessage] = useState(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [returnCompleted, setReturnCompleted] = useState(false);
+  const [lockedOut, setLockedOut] = useState(false);
   const scannerInstanceRef = useRef(null);
+  const pollRef = useRef(null);
 
   useEffect(() => {
+    // Poll return-check status every 15 seconds
+    const checkStatus = async () => {
+      try {
+        const res = await apiFetch('/api/return-check/status/');
+        const data = await res.json();
+        if (!data.open) {
+          setLockedOut(true);
+          clearInterval(pollRef.current);
+        }
+      } catch {
+        // ignore network errors
+      }
+    };
+    checkStatus();
+    pollRef.current = setInterval(checkStatus, 15000);
     return () => {
+      clearInterval(pollRef.current);
       stopCamera();
     };
   }, []);
+
+  const handleLockedOutConfirm = async () => {
+    await apiFetch('/api/auth/logout/', { method: 'POST' });
+    logout();
+  };
 
   const stopCamera = async () => {
     if (scannerInstanceRef.current) {
@@ -136,6 +161,19 @@ function ReturnCheck() {
 
   return (
     <div className="return-check-container">
+
+      {lockedOut && (
+        <div className="lockout-overlay">
+          <div className="lockout-popup">
+            <h3>Artikelrückmeldung gesperrt</h3>
+            <p>Die Artikelrückmeldung wurde vom Administrator gesperrt. Sie werden abgemeldet.</p>
+            <button className="btn btn-primary" onClick={handleLockedOutConfirm}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="page-header">
         <div>
           <h2 className="page-title">Rückmeldung</h2>
