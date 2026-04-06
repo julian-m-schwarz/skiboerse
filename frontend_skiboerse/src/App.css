@@ -3268,7 +3268,7 @@ body {
   /* Column widths */
   .rcpl-col-check   { width: 22pt; text-align: center; }
   .rcpl-col-barcode { width: 60pt; font-family: monospace; font-size: 8.5pt; text-decoration: none !important; }
-  .rcpl-col-price   { width: 38pt; text-align: right; }
+  .rcpl-col-price   { width: 52pt; text-align: right; white-space: nowrap; }
   .rcpl-col-status  { width: 52pt; text-align: center; font-weight: bold; }
 
   /* Undo strikethrough on barcode and status cells of sold rows */
