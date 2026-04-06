@@ -3233,23 +3233,24 @@ body {
   }
 
   .rcpl-print-table thead tr {
-    background: #222 !important;
-    color: #fff !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    background: none;
+    color: #000;
+    border-bottom: 2px solid #000;
   }
 
   .rcpl-print-table th {
-    padding: 5pt 4pt;
+    padding: 3pt 4pt;
     text-align: left;
     font-weight: bold;
-    border: 1px solid #444;
+    font-size: 8pt;
+    border: 1px solid #999;
   }
 
   .rcpl-print-table td {
-    padding: 4pt;
+    padding: 3pt 4pt;
     border: 1px solid #ccc;
     vertical-align: middle;
+    font-size: 8pt;
   }
 
   .rcpl-print-table tbody tr:nth-child(even) {

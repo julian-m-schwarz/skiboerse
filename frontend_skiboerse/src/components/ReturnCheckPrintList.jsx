@@ -129,7 +129,6 @@ function ReturnCheckPrintList() {
                   <th>Größe</th>
                   <th>Farbe</th>
                   <th className="rcpl-col-price">Preis</th>
-                  <th className="rcpl-col-status">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -144,9 +143,6 @@ function ReturnCheckPrintList() {
                     <td>{item.size || '—'}</td>
                     <td>{item.color || '—'}</td>
                     <td className="rcpl-col-price">{parseFloat(item.price).toFixed(2)} €</td>
-                    <td className={`rcpl-col-status ${item.is_sold ? 'rcpl-status-sold' : 'rcpl-status-ok'}`}>
-                      {item.is_sold ? 'VERKAUFT' : 'Vorhanden'}
-                    </td>
                   </tr>
                 ))}
               </tbody>
