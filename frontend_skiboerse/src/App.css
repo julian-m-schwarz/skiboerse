@@ -2122,7 +2122,8 @@ body {
 /* Status column min-width to prevent badge wrapping */
 .inventory-table td:nth-child(7),
 .inventory-table th:nth-child(7) {
-  min-width: 160px;
+  min-width: 180px;
+  white-space: nowrap;
 }
 
 /* Picked up status badge */
@@ -2132,10 +2133,10 @@ body {
 }
 
 .returned-timestamp {
-  display: block;
+  display: inline;
   font-size: 0.7rem;
   color: #666;
-  margin-top: 0.15rem;
+  margin-left: 0.3rem;
 }
 
 /* Device Status Indicator */
