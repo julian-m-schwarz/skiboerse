@@ -1001,6 +1001,7 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .status-available {
@@ -2115,6 +2116,13 @@ body {
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Status column min-width to prevent badge wrapping */
+.inventory-table td:nth-child(7),
+.inventory-table th:nth-child(7) {
+  min-width: 160px;
 }
 
 /* Picked up status badge */
