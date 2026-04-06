@@ -33,7 +33,7 @@ python manage.py collectstatic --noinput --clear
 
 echo "→ Frontend bauen..."
 cd frontend_skiboerse
-npm ci --silent
+npm install --silent
 npm run build
 cd ..
 
