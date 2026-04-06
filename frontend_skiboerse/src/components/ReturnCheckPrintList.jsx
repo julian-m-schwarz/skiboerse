@@ -6,12 +6,10 @@ function ReturnCheckPrintList() {
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [printerStatus, setPrinterStatus] = useState('idle'); // idle | testing | connected | error
-  // printData: null | { test: true } | { pages: [{ seller, items }] }
   const [printData, setPrintData] = useState(null);
-  const [printLoadingId, setPrintLoadingId] = useState(null); // seller id being fetched
+  const [printLoadingId, setPrintLoadingId] = useState(null);
   const [printAllLoading, setPrintAllLoading] = useState(false);
-  const [printedIds, setPrintedIds] = useState(new Set()); // seller ids that have been printed
+  const [printedIds, setPrintedIds] = useState(new Set());
 
   useEffect(() => {
     fetchSellers();
@@ -50,7 +48,7 @@ function ReturnCheckPrintList() {
   };
 
   const handleTestPrint = () => {
-    triggerPrint({ test: true }, () => setPrinterStatus('testing'));
+    triggerPrint({ test: true });
   };
 
   const handlePrintSeller = async (seller) => {
@@ -90,13 +88,6 @@ function ReturnCheckPrintList() {
 
   const formatDate = () =>
     new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-  const statusLabel = {
-    idle: 'Noch nicht getestet',
-    testing: 'Testdruck gesendet — Hat es funktioniert?',
-    connected: 'Drucker verbunden',
-    error: 'Druckfehler — Drucker prüfen',
-  };
 
   const printedCount = sellers.filter(s => printedIds.has(s.id)).length;
 
@@ -183,47 +174,19 @@ function ReturnCheckPrintList() {
           <Link to="/" className="btn btn-secondary">← Zurück</Link>
         </div>
 
-        {/* Printer setup card */}
+        {/* Printer info card */}
         <div className="card rcpl-printer-card">
           <div className="rcpl-printer-top">
-            <h3 className="rcpl-printer-heading">Druckerverbindung</h3>
-            <div className="rcpl-status-badge">
-              <span className={`rcpl-status-dot rcpl-status-dot--${printerStatus}`} />
-              <span className="rcpl-status-label">{statusLabel[printerStatus]}</span>
-            </div>
+            <h3 className="rcpl-printer-heading">Drucker</h3>
           </div>
-
           <p className="rcpl-printer-hint">
-            Der Druck läuft direkt über diesen Laptop — nicht über den Raspberry Pi. Stellen Sie
-            sicher, dass Ihr Drucker angeschlossen und im System verfügbar ist, dann starten Sie
-            einen Testdruck.
+            Der Druck läuft direkt über diesen Laptop — nicht über den Raspberry Pi.
+            Stellen Sie sicher, dass Ihr Drucker angeschlossen und im System verfügbar ist.
           </p>
-
           <div className="rcpl-printer-actions">
-            <button
-              className="btn btn-primary"
-              onClick={handleTestPrint}
-              disabled={printerStatus === 'testing'}
-            >
+            <button className="btn btn-secondary" onClick={handleTestPrint}>
               Testdruck starten
             </button>
-
-            {printerStatus === 'testing' && (
-              <>
-                <button className="btn btn-success" onClick={() => setPrinterStatus('connected')}>
-                  Hat funktioniert
-                </button>
-                <button className="btn btn-danger" onClick={() => setPrinterStatus('error')}>
-                  Hat nicht funktioniert
-                </button>
-              </>
-            )}
-
-            {(printerStatus === 'connected' || printerStatus === 'error') && (
-              <button className="btn btn-secondary" onClick={handleTestPrint}>
-                Erneut testen
-              </button>
-            )}
           </div>
         </div>
 
@@ -234,8 +197,6 @@ function ReturnCheckPrintList() {
           <div className="loading" style={{ marginTop: '2rem' }}>Verkäufer laden…</div>
         ) : (
           <div style={{ marginTop: '2rem' }}>
-
-            {/* List header with counter and "print all" button */}
             <div className="rcpl-list-header">
               <h3 className="rcpl-sellers-heading">
                 Verkäufer ({sellers.length})
@@ -248,17 +209,11 @@ function ReturnCheckPrintList() {
               <button
                 className="btn btn-primary"
                 onClick={handlePrintAll}
-                disabled={printerStatus !== 'connected' || printAllLoading}
+                disabled={printAllLoading}
               >
                 {printAllLoading ? 'Laden…' : 'Alle drucken'}
               </button>
             </div>
-
-            {printerStatus !== 'connected' && (
-              <div className="rcpl-hint-banner">
-                Bitte erst den Testdruck starten und die Verbindung bestätigen.
-              </div>
-            )}
 
             <div className="rcpl-sellers-list">
               {sellers.map(seller => {
@@ -276,7 +231,7 @@ function ReturnCheckPrintList() {
                     <button
                       className={`btn btn-small ${printed ? 'btn-secondary' : 'btn-primary'}`}
                       onClick={() => handlePrintSeller(seller)}
-                      disabled={printerStatus !== 'connected' || printLoadingId === seller.id || printAllLoading}
+                      disabled={printLoadingId === seller.id || printAllLoading}
                     >
                       {printLoadingId === seller.id ? 'Laden…' : printed ? 'Erneut drucken' : 'Drucken'}
                     </button>
