@@ -108,7 +108,7 @@ function ReturnCheckPrintList() {
           <div key={page.seller.id} className={`rcpl-seller-page${i > 0 ? ' rcpl-page-break' : ''}`}>
             <div className="rcpl-print-header">
               <div>
-                <div className="rcpl-print-title">Skibörse Renningen — Artikelrückmeldung</div>
+                <div className="rcpl-print-title">Skibörse Renningen</div>
                 <div className="rcpl-print-subtitle">Druckdatum: {formatDate()}</div>
               </div>
               <div className="rcpl-print-seller-box">
