@@ -88,7 +88,7 @@ class SellerViewSet(viewsets.ModelViewSet):
 
 
 class ItemViewSet(viewsets.ModelViewSet):
-    queryset = Item.objects.select_related('seller').all()
+    queryset = Item.objects.select_related('seller').prefetch_related('sales').all()
     serializer_class = ItemSerializer
 
     def get_queryset(self):
@@ -132,7 +132,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            item = Item.objects.get(barcode=barcode)
+            item = Item.objects.prefetch_related('sales').get(barcode=barcode)
             serializer = ItemBarcodeSerializer(item)
             data = serializer.data
 

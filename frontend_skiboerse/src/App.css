@@ -3233,6 +3233,135 @@ body {
   line-height: 1.5;
 }
 
+.payment-icon {
+  margin-left: 0.3rem;
+  font-size: 0.9em;
+}
+
+/* Seller search results */
+.seller-search-results {
+  margin-top: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.seller-search-result-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: #fff;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.seller-search-result-row:last-child {
+  border-bottom: none;
+}
+
+.seller-search-result-row:hover {
+  background: var(--color-ice);
+}
+
+.seller-result-number {
+  font-weight: 600;
+  color: var(--color-teal-dark);
+  min-width: 60px;
+}
+
+.seller-result-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.seller-result-pending {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+/* Seller items view */
+.seller-items-view {
+  margin-top: 1rem;
+}
+
+.seller-items-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--color-ice);
+  border-radius: var(--border-radius);
+  margin-bottom: 0.75rem;
+}
+
+.seller-items-count {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.seller-items-list {
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.seller-items-empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.seller-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  background: #fff;
+}
+
+.seller-item-row:last-child {
+  border-bottom: none;
+}
+
+.seller-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.seller-item-barcode {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-teal-dark);
+}
+
+.seller-item-desc {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seller-item-price {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
 /* ═══════════════════════════════════════════════════════
    PRINT STYLES — @media print
    ═══════════════════════════════════════════════════════ */

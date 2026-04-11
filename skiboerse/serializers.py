@@ -115,6 +115,7 @@ class SellerSerializer(serializers.ModelSerializer):
 class ItemSerializer(serializers.ModelSerializer):
     seller_name = serializers.SerializerMethodField()
     seller_mobile = serializers.SerializerMethodField()
+    payment_method = serializers.SerializerMethodField()
 
     class Meta:
         model = Item
@@ -136,9 +137,10 @@ class ItemSerializer(serializers.ModelSerializer):
             "sold_at",
             "returned_at",
             "picked_up_at",
+            "payment_method",
             "created_at",
         ]
-        read_only_fields = ["created_at", "seller_name", "seller_mobile", "barcode", "sold_at", "returned_at", "picked_up_at"]
+        read_only_fields = ["created_at", "seller_name", "seller_mobile", "barcode", "sold_at", "returned_at", "picked_up_at", "payment_method"]
 
     def get_seller_name(self, obj):
         return f"{obj.seller.first_name} {obj.seller.last_name}"
@@ -146,9 +148,14 @@ class ItemSerializer(serializers.ModelSerializer):
     def get_seller_mobile(self, obj):
         return obj.seller.mobile_number
 
+    def get_payment_method(self, obj):
+        sale = obj.sales.first()
+        return sale.payment_method if sale else None
+
 
 class ItemBarcodeSerializer(serializers.ModelSerializer):
     seller_name = serializers.SerializerMethodField()
+    payment_method = serializers.SerializerMethodField()
 
     class Meta:
         model = Item
@@ -165,10 +172,15 @@ class ItemBarcodeSerializer(serializers.ModelSerializer):
             "is_sold",
             "returned_at",
             "picked_up_at",
+            "payment_method",
         ]
 
     def get_seller_name(self, obj):
         return f"{obj.seller.first_name} {obj.seller.last_name}"
+
+    def get_payment_method(self, obj):
+        sale = obj.sales.first()
+        return sale.payment_method if sale else None
 
 
 class SaleSerializer(serializers.ModelSerializer):
@@ -176,7 +188,7 @@ class SaleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Sale
-        fields = ["id", "items", "items_detail", "total_amount", "sale_date", "notes"]
+        fields = ["id", "items", "items_detail", "total_amount", "sale_date", "notes", "payment_method"]
         read_only_fields = ["sale_date"]
 
     def validate(self, data):

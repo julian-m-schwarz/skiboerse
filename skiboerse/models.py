@@ -196,10 +196,16 @@ class Item(models.Model):
 
 
 class Sale(models.Model):
+    PAYMENT_CHOICES = [
+        ('cash', 'Bar'),
+        ('card', 'Karte'),
+    ]
+
     items = models.ManyToManyField(Item, related_name="sales")
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     sale_date = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True)
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_CHOICES, default='cash')
 
     def __str__(self):
         return f"Sale #{self.id} - ${self.total_amount} ({self.sale_date.strftime('%Y-%m-%d')})"

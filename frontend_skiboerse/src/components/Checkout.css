@@ -197,3 +197,37 @@
     align-items: center;
   }
 }
+
+.payment-method-select {
+  margin-top: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.payment-method-label {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.payment-method-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.payment-method-btn {
+  padding: 0.5rem 1.25rem;
+  border: 2px solid var(--color-border, #ddd);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.payment-method-btn.active {
+  border-color: var(--color-teal, #4EBDC4);
+  background: var(--color-ice, #F0F9FA);
+  color: var(--color-teal-dark, #3A9DA3);
+}

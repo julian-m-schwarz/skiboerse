@@ -11,6 +11,7 @@ function Checkout() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('cash');
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -81,6 +82,7 @@ function Checkout() {
           items: cart.map((item) => item.id),
           total_amount: calculateTotal(),
           notes: '',
+          payment_method: paymentMethod,
         }),
       });
 
@@ -210,6 +212,25 @@ function Checkout() {
               </div>
               <div className="confirm-total">
                 <strong>Gesamtbetrag: {calculateTotal()} €</strong>
+              </div>
+              <div className="payment-method-select">
+                <span className="payment-method-label">Zahlungsart:</span>
+                <div className="payment-method-buttons">
+                  <button
+                    type="button"
+                    className={`payment-method-btn ${paymentMethod === 'cash' ? 'active' : ''}`}
+                    onClick={() => setPaymentMethod('cash')}
+                  >
+                    💵 Bar
+                  </button>
+                  <button
+                    type="button"
+                    className={`payment-method-btn ${paymentMethod === 'card' ? 'active' : ''}`}
+                    onClick={() => setPaymentMethod('card')}
+                  >
+                    💳 Karte
+                  </button>
+                </div>
               </div>
             </div>
             <div className="popup-actions">

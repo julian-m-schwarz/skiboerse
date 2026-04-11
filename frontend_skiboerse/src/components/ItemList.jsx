@@ -170,7 +170,19 @@ function ItemList() {
                   <td>{item.seller_name}</td>
                   <td>
                     {item.is_sold ? (
-                      <span className="status-badge status-sold">Verkauft</span>
+                      <span className="status-badge status-sold">
+                        Verkauft
+                        {item.sold_at && (
+                          <span className="returned-timestamp">
+                            {new Date(item.sold_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                        {item.payment_method && (
+                          <span className="payment-icon" title={item.payment_method === 'cash' ? 'Bar' : 'Karte'}>
+                            {item.payment_method === 'cash' ? '💵' : '💳'}
+                          </span>
+                        )}
+                      </span>
                     ) : item.picked_up_at ? (
                       <span className="status-badge status-picked-up">
                         Abgeholt

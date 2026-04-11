@@ -141,7 +141,7 @@ function UserManagement() {
     <div className="user-management-container">
       <div className="page-header">
         <div>
-          <h2 className="page-title">Benutzerverwaltung</h2>
+          <h2 className="page-title">Benutzer</h2>
           <Link to="/" className="btn btn-secondary">
             ← Zurück
           </Link>
