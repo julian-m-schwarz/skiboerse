@@ -16,6 +16,12 @@ echo "→ Neuesten Code holen..."
 cd "$REPO_DIR"
 git fetch origin
 git reset --hard origin/main
+chmod +x "$0"
+
+# Re-exec with updated script if this is the first run
+if [ "$1" != "--updated" ]; then
+  exec "$0" --updated
+fi
 
 echo "→ Python-Abhängigkeiten installieren..."
 if [ ! -f "venv/bin/activate" ]; then
