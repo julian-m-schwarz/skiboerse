@@ -18,6 +18,10 @@ git fetch origin
 git reset --hard origin/main
 
 echo "→ Python-Abhängigkeiten installieren..."
+if [ ! -f "venv/bin/activate" ]; then
+  echo "  venv nicht gefunden, wird erstellt..."
+  python3 -m venv venv
+fi
 source venv/bin/activate
 pip install -r requirements.txt --quiet
 
