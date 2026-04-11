@@ -75,10 +75,8 @@ sudo systemctl reload nginx
 # ── 8. Gunicorn ───────────────────────────────────────────────
 echo "→ [8/8] Gunicorn..."
 
-# Gunicorn-Service anlegen falls er fehlt
-if [ ! -f /etc/systemd/system/gunicorn.service ]; then
-  echo "  Gunicorn-Service erstellen..."
-  sudo tee /etc/systemd/system/gunicorn.service > /dev/null <<EOF
+# Gunicorn-Service bei jedem Deploy aktualisieren
+sudo tee /etc/systemd/system/gunicorn.service > /dev/null <<EOF
 [Unit]
 Description=Skiboerse Gunicorn
 After=network.target
@@ -89,6 +87,7 @@ Group=www-data
 WorkingDirectory=$REPO_DIR
 Environment="DB_USER=skiboerse"
 Environment="DB_PASSWORD=skiboerse123"
+Environment="DJANGO_DEBUG=False"
 ExecStart=$VENV/bin/gunicorn \
     --workers 2 \
     --bind unix:/run/gunicorn.sock \
@@ -99,9 +98,8 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 EOF
-  sudo systemctl daemon-reload
-  sudo systemctl enable gunicorn
-fi
+sudo systemctl daemon-reload
+sudo systemctl enable gunicorn
 
 sudo systemctl restart gunicorn
 sleep 2
