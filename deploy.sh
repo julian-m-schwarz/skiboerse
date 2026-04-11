@@ -38,14 +38,14 @@ export DB_PASSWORD=skiboerse123
 echo "→ Datenbankmigrationen durchführen..."
 python manage.py migrate --noinput
 
-echo "→ Statische Dateien sammeln..."
-python manage.py collectstatic --noinput --clear
-
 echo "→ Frontend bauen..."
 cd frontend_skiboerse
 npm install --silent
 npm run build
 cd ..
+
+echo "→ Statische Dateien sammeln..."
+python manage.py collectstatic --noinput --clear
 
 echo "→ Nginx-Konfiguration aktualisieren..."
 sudo cp "$REPO_DIR/nginx/skiboerse.conf" /etc/nginx/sites-available/skiboerse
