@@ -25,8 +25,8 @@ function LoginPage() {
       <div className="login-card">
         <div className="login-header">
           <h1 className="logo">
-            <span className="logo-icon">&#9935;</span>
-            Skiboerse<span className="logo-accent"> Renningen</span>
+            <img src="/SCR_Logo_2019_RGB.svg" alt="Ski Club Renningen" className="logo-img" />
+            Skibörse
           </h1>
         </div>
 

@@ -635,5 +635,159 @@ def return_check_toggle(request):
     return Response({'open': new_state})
 
 
+@api_view(['GET'])
+def analytics(request):
+    """GET /api/analytics/ — aggregated stats for the admin dashboard."""
+    if not is_admin(request.user):
+        return Response({'error': 'Keine Berechtigung'}, status=status.HTTP_403_FORBIDDEN)
+
+    items = list(Item.objects.select_related('seller').all())
+    sold = [i for i in items if i.is_sold]
+    unsold = [i for i in items if not i.is_sold]
+    returned = [i for i in unsold if i.returned_at]
+    pending = [i for i in unsold if not i.returned_at]
+
+    total_revenue = sum(float(i.price) for i in sold)
+    commission = round(total_revenue * 0.10, 2)
+
+    # By category
+    categories = {}
+    for item in items:
+        c = item.category
+        if c not in categories:
+            categories[c] = {'category': c, 'total': 0, 'sold': 0, 'revenue': 0.0}
+        categories[c]['total'] += 1
+        if item.is_sold:
+            categories[c]['sold'] += 1
+            categories[c]['revenue'] += float(item.price)
+    by_category = sorted(categories.values(), key=lambda x: x['revenue'], reverse=True)
+
+    # Top sellers by revenue
+    sellers = {}
+    for item in sold:
+        sid = item.seller_id
+        if sid not in sellers:
+            sellers[sid] = {
+                'name': f"{item.seller.first_name} {item.seller.last_name}",
+                'number': item.seller.seller_number,
+                'sold': 0,
+                'revenue': 0.0,
+            }
+        sellers[sid]['sold'] += 1
+        sellers[sid]['revenue'] += float(item.price)
+    top_sellers = sorted(sellers.values(), key=lambda x: x['revenue'], reverse=True)[:10]
+
+    # Price range distribution
+    ranges = [
+        {'label': '0–10 €', 'min': 0, 'max': 10},
+        {'label': '10–25 €', 'min': 10, 'max': 25},
+        {'label': '25–50 €', 'min': 25, 'max': 50},
+        {'label': '50–100 €', 'min': 50, 'max': 100},
+        {'label': '> 100 €', 'min': 100, 'max': None},
+    ]
+    for r in ranges:
+        r['count'] = sum(
+            1 for i in items
+            if float(i.price) >= r['min'] and (r['max'] is None or float(i.price) < r['max'])
+        )
+        r['sold'] = sum(
+            1 for i in sold
+            if float(i.price) >= r['min'] and (r['max'] is None or float(i.price) < r['max'])
+        )
+
+    # Club profit: commission on sold items + acceptance fees already paid
+    sellers_all = list(Seller.objects.prefetch_related('items').all())
+    acceptance_fees_paid = sum(
+        seller.calculate_acceptance_fee()
+        for seller in sellers_all
+        if seller.acceptance_fee_paid
+    )
+    club_profit = round(commission + acceptance_fees_paid, 2)
+
+    # Payment method breakdown
+    sales = Sale.objects.prefetch_related('items').all()
+    cash_revenue = sum(float(s.total_amount) for s in sales if s.payment_method == 'cash')
+    card_revenue = sum(float(s.total_amount) for s in sales if s.payment_method == 'card')
+    cash_count = sum(s.items.count() for s in sales if s.payment_method == 'cash')
+    card_count = sum(s.items.count() for s in sales if s.payment_method == 'card')
+
+    return Response({
+        'total_items': len(items),
+        'sold_count': len(sold),
+        'unsold_count': len(unsold),
+        'returned_count': len(returned),
+        'pending_count': len(pending),
+        'total_revenue': round(total_revenue, 2),
+        'commission': commission,
+        'acceptance_fees_paid': round(acceptance_fees_paid, 2),
+        'club_profit': club_profit,
+        'net_payout': round(total_revenue - commission, 2),
+        'by_category': by_category,
+        'top_sellers': top_sellers,
+        'price_ranges': ranges,
+        'payment': {
+            'cash_revenue': round(cash_revenue, 2),
+            'card_revenue': round(card_revenue, 2),
+            'cash_count': cash_count,
+            'card_count': card_count,
+        },
+    })
+
+
+@api_view(['GET'])
+def price_histogram(request):
+    """GET /api/analytics/price-histogram/?category=Ski — price distribution for a category."""
+    if not is_admin(request.user):
+        return Response({'error': 'Keine Berechtigung'}, status=status.HTTP_403_FORBIDDEN)
+
+    category = request.query_params.get('category', '')
+    qs = Item.objects.all()
+    if category:
+        qs = qs.filter(category=category)
+
+    items = list(qs.values('price', 'is_sold'))
+    if not items:
+        return Response({'buckets': [], 'category': category})
+
+    prices = [float(i['price']) for i in items]
+    min_price = min(prices)
+    max_price = max(prices)
+
+    # Dynamic bucket width: aim for ~8 buckets, rounded to a nice number
+    raw_width = (max_price - min_price) / 8 if max_price > min_price else 10
+    for nice in [1, 2, 5, 10, 15, 20, 25, 50, 100]:
+        if nice >= raw_width:
+            bucket_width = nice
+            break
+    else:
+        bucket_width = 100
+
+    # Build buckets starting from floor of min_price
+    import math
+    start = math.floor(min_price / bucket_width) * bucket_width
+    end = math.ceil(max_price / bucket_width) * bucket_width + bucket_width
+
+    buckets = []
+    b = start
+    while b < end:
+        bucket_items = [i for i in items if b <= float(i['price']) < b + bucket_width]
+        buckets.append({
+            'label': f'{int(b)}–{int(b + bucket_width)} €',
+            'min': b,
+            'max': b + bucket_width,
+            'total': len(bucket_items),
+            'sold': sum(1 for i in bucket_items if i['is_sold']),
+        })
+        b += bucket_width
+
+    # Remove leading/trailing empty buckets
+    while buckets and buckets[0]['total'] == 0:
+        buckets.pop(0)
+    while buckets and buckets[-1]['total'] == 0:
+        buckets.pop()
+
+    return Response({'buckets': buckets, 'category': category})
+
+
 class FrontendView(TemplateView):
     template_name = "index.html"

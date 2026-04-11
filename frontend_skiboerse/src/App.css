@@ -99,6 +99,13 @@ body {
   font-size: 1.4rem;
 }
 
+.logo-img {
+  height: 2rem;
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
 .logo-accent {
   color: var(--color-snow);
   font-weight: 400;
@@ -767,6 +774,14 @@ body {
 
 .login-header .logo {
   font-size: 1.8rem;
+  color: var(--color-teal);
+  text-shadow: none;
+  justify-content: center;
+}
+
+.login-header .logo-img {
+  filter: none;
+  height: 2.2rem;
 }
 
 .login-form .form-group {
@@ -2354,46 +2369,49 @@ body {
   margin: 0 auto;
 }
 
-.user-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--spacing-lg);
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
   margin-top: var(--spacing-lg);
-}
-
-.user-card {
   background: var(--color-snow);
   border-radius: var(--border-radius);
-  padding: var(--spacing-lg);
+  overflow: hidden;
   box-shadow: 0 4px 15px var(--color-shadow);
-  transition: var(--transition);
 }
 
-.user-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+.user-table th {
+  background: var(--color-teal);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.user-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
-  padding-bottom: var(--spacing-sm);
-  border-bottom: 2px solid var(--color-glacier);
+.user-table td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--color-glacier);
+  vertical-align: middle;
 }
 
-.user-name {
-  font-size: 1.3rem;
-  font-weight: 700;
+.user-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.user-table tbody tr:hover {
+  background: var(--color-ice);
+}
+
+.user-table-name {
+  font-weight: 600;
   color: var(--color-mountain);
-  margin: 0;
 }
 
-.user-card-actions {
+.user-table-actions {
   display: flex;
-  gap: var(--spacing-xs);
-  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
 /* Role Badges */
@@ -3236,6 +3254,50 @@ body {
 .payment-icon {
   margin-left: 0.3rem;
   font-size: 0.9em;
+}
+
+/* Konami Code Easter Egg */
+@keyframes konami-fall {
+  0%   { transform: translateY(-60px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(360deg); opacity: 0.6; }
+}
+
+@keyframes konami-msg {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  80%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+
+.konami-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.konami-flake {
+  position: absolute;
+  top: -60px;
+  animation: konami-fall linear forwards;
+  user-select: none;
+}
+
+.konami-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: bold;
+  padding: 1rem 2rem;
+  border-radius: 16px;
+  white-space: nowrap;
+  animation: konami-msg 4s ease forwards;
+  letter-spacing: 2px;
 }
 
 /* Seller search results */

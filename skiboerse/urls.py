@@ -4,7 +4,7 @@ from .views import (
     SellerViewSet, ItemViewSet, SaleViewSet, device_status,
     login_view, logout_view, session_view,
     user_list, user_create, user_detail, user_change_password,
-    return_check_status, return_check_toggle,
+    return_check_status, return_check_toggle, analytics, price_histogram,
 )
 
 # Create a router and register our viewsets
@@ -26,4 +26,6 @@ urlpatterns = [
     path("api/devices/status/", device_status, name="device-status"),
     path("api/return-check/status/", return_check_status, name="return-check-status"),
     path("api/return-check/toggle/", return_check_toggle, name="return-check-toggle"),
+    path("api/analytics/", analytics, name="analytics"),
+    path("api/analytics/price-histogram/", price_histogram, name="price-histogram"),
 ]

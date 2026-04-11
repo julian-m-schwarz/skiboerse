@@ -1,7 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../AuthContext';
 
 function InventoryHub() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   return (
     <div className="inventory-hub">
       <div className="page-header">
@@ -19,6 +23,13 @@ function InventoryHub() {
           <div className="hub-card-icon">⛷️</div>
           <h3>Artikel verwalten</h3>
         </Link>
+
+        {isAdmin && (
+          <Link to="/inventory/dashboard" className="hub-card">
+            <div className="hub-card-icon">📊</div>
+            <h3>Analyse</h3>
+          </Link>
+        )}
       </div>
     </div>
   );

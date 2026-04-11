@@ -165,39 +165,38 @@ function UserManagement() {
           <p className="empty-state-text">Keine Benutzer vorhanden.</p>
         </div>
       ) : (
-        <div className="user-grid">
-          {users.map((user) => (
-            <div key={user.id} className="user-card">
-              <div className="user-card-header">
-                <h3 className="user-name">{user.username}</h3>
-                <span className={`badge ${getRoleBadgeClass(user.role)}`}>
-                  {getRoleLabel(user.role)}
-                </span>
-              </div>
-
-              <div className="user-card-actions">
-                <button
-                  onClick={() => openEditModal(user)}
-                  className="btn btn-secondary btn-small"
-                >
-                  Bearbeiten
-                </button>
-                <button
-                  onClick={() => openPasswordModal(user)}
-                  className="btn btn-secondary btn-small"
-                >
-                  Passwort
-                </button>
-                <button
-                  onClick={() => handleDeleteUser(user)}
-                  className="btn btn-danger btn-small"
-                >
-                  Löschen
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+        <table className="user-table">
+          <thead>
+            <tr>
+              <th>Benutzername</th>
+              <th>Rolle</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr key={user.id}>
+                <td className="user-table-name">{user.username}</td>
+                <td>
+                  <span className={`badge ${getRoleBadgeClass(user.role)}`}>
+                    {getRoleLabel(user.role)}
+                  </span>
+                </td>
+                <td className="user-table-actions">
+                  <button onClick={() => openEditModal(user)} className="btn btn-secondary btn-sm">
+                    Bearbeiten
+                  </button>
+                  <button onClick={() => openPasswordModal(user)} className="btn btn-secondary btn-sm">
+                    Passwort
+                  </button>
+                  <button onClick={() => handleDeleteUser(user)} className="btn btn-danger btn-sm">
+                    Löschen
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
 
       {/* Create User Modal */}

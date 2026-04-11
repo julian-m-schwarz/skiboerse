@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, NavLink } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import useDeviceType from './hooks/useDeviceType';
@@ -18,6 +18,68 @@ const Payout = lazy(() => import('./components/Payout'));
 const ReturnCheck = lazy(() => import('./components/ReturnCheck'));
 const ReturnCheckPrintList = lazy(() => import('./components/ReturnCheckPrintList'));
 const UserManagement = lazy(() => import('./components/UserManagement'));
+const Dashboard = lazy(() => import('./components/Dashboard'));
+
+// Konami Code Easter Egg
+const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+
+function KonamiEasterEgg() {
+  const [active, setActive] = useState(false);
+  const [flakes, setFlakes] = useState([]);
+  const progress = useState([])[0];
+  const progressRef = { current: [] };
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      progressRef.current = [...progressRef.current, e.key];
+      if (progressRef.current.length > KONAMI.length) {
+        progressRef.current = progressRef.current.slice(-KONAMI.length);
+      }
+      if (progressRef.current.join(',') === KONAMI.join(',')) {
+        progressRef.current = [];
+        triggerSnow();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
+
+  const triggerSnow = () => {
+    const newFlakes = Array.from({ length: 60 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 2,
+      duration: 2 + Math.random() * 3,
+      size: 0.8 + Math.random() * 1.4,
+      emoji: Math.random() > 0.7 ? '⛷' : '❄️',
+    }));
+    setFlakes(newFlakes);
+    setActive(true);
+    setTimeout(() => { setActive(false); setFlakes([]); }, 5000);
+  };
+
+  if (!active) return null;
+
+  return (
+    <div className="konami-overlay">
+      {flakes.map(f => (
+        <span
+          key={f.id}
+          className="konami-flake"
+          style={{
+            left: `${f.left}%`,
+            animationDelay: `${f.delay}s`,
+            animationDuration: `${f.duration}s`,
+            fontSize: `${f.size}rem`,
+          }}
+        >
+          {f.emoji}
+        </span>
+      ))}
+      <div className="konami-message">⛷ KONAMI CODE! ⛷</div>
+    </div>
+  );
+}
 
 // Loading fallback component
 const LoadingSpinner = () => (
@@ -85,6 +147,7 @@ function MobileNavMain({ isAdmin, logout }) {
 
 function AppContent() {
   const { user, loading, logout } = useAuth();
+  // Easter egg — always mounted so keydown listener is active
   const isMobile = useDeviceType();
 
   if (loading) {
@@ -97,9 +160,12 @@ function AppContent() {
 
   if (!user) {
     return (
-      <Suspense fallback={<LoadingSpinner />}>
-        <LoginPage />
-      </Suspense>
+      <>
+        <KonamiEasterEgg />
+        <Suspense fallback={<LoadingSpinner />}>
+          <LoginPage />
+        </Suspense>
+      </>
     );
   }
 
@@ -111,12 +177,13 @@ function AppContent() {
   if (isReporter) {
     return (
       <Router>
+        <KonamiEasterEgg />
         <div className={`app ${deviceClass}`}>
           <header className="app-header">
             <div className="header-content">
               <Link to="/" style={{ textDecoration: 'none' }}>
                 <h1 className="logo">
-                  <span className="logo-icon">⛷</span>
+                  <img src="/SCR_Logo_2019_RGB.svg" alt="Ski Club Renningen" className="logo-img" />
                   {!isMobile && <span className="logo-club">Ski Club</span>}
                   Skibörse{!isMobile && <span className="logo-accent"> Renningen</span>}
                 </h1>
@@ -159,6 +226,7 @@ function AppContent() {
 
   return (
     <Router>
+      <KonamiEasterEgg />
       <div className={`app ${deviceClass}`}>
         <header className="app-header">
           <div className="header-content">
@@ -216,6 +284,11 @@ function AppContent() {
 
               {/* Payout/Settlement */}
               <Route path="/payout" element={<Payout />} />
+
+              {/* Dashboard/Analytics (Admin only) */}
+              {isAdmin && (
+                <Route path="/inventory/dashboard" element={<Dashboard />} />
+              )}
 
               {/* User Management (Admin only) */}
               {isAdmin && (
