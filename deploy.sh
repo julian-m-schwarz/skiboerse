@@ -66,6 +66,9 @@ if [ -L /etc/nginx/sites-enabled/default ]; then
   sudo rm /etc/nginx/sites-enabled/default
 fi
 
+# Nginx braucht Lesezugriff auf /home/pi
+chmod o+x /home/pi
+
 sudo nginx -t
 sudo systemctl reload nginx
 
