@@ -154,6 +154,9 @@ CORS_ALLOWED_ORIGINS = (
 
 CORS_ALLOW_CREDENTIALS = True
 
+# Tell Django it's behind an HTTPS reverse proxy (nginx)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 CSRF_TRUSTED_ORIGINS = (
     [
         "http://localhost:3000",
