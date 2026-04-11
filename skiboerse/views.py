@@ -679,11 +679,11 @@ def analytics(request):
 
     # Price range distribution
     ranges = [
-        {'label': '0–10 €', 'min': 0, 'max': 10},
-        {'label': '10–25 €', 'min': 10, 'max': 25},
-        {'label': '25–50 €', 'min': 25, 'max': 50},
-        {'label': '50–100 €', 'min': 50, 'max': 100},
-        {'label': '> 100 €', 'min': 100, 'max': None},
+        {'label': '0-10 EUR', 'min': 0, 'max': 10},
+        {'label': '10-25 EUR', 'min': 10, 'max': 25},
+        {'label': '25-50 EUR', 'min': 25, 'max': 50},
+        {'label': '50-100 EUR', 'min': 50, 'max': 100},
+        {'label': '> 100 EUR', 'min': 100, 'max': None},
     ]
     for r in ranges:
         r['count'] = sum(

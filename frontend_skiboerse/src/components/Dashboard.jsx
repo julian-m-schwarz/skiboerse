@@ -239,7 +239,7 @@ function Dashboard() {
           <span className="dash-kpi-label">Verkaufsquote</span>
         </div>
         <div className="dash-kpi dash-kpi-profit">
-          <span className="dash-kpi-value">{data.club_profit.toFixed(2)} €</span>
+          <span className="dash-kpi-value">{(data.club_profit ?? 0).toFixed(2)} €</span>
           <span className="dash-kpi-label">Vereinsgewinn</span>
           <span className="dash-kpi-sublabel">Provision + Annahmegebühren</span>
         </div>
@@ -249,39 +249,31 @@ function Dashboard() {
       <div className="dash-card dash-payment-card">
         <h3 className="dash-card-title">Zahlungsarten</h3>
         <div className="payment-split">
-          <div className="payment-split-item">
-            <span className="payment-split-icon">💵</span>
-            <span className="payment-split-label">Bar</span>
-            <span className="payment-split-count">{data.payment.cash_count} Artikel</span>
-            <span className="payment-split-amount">{data.payment.cash_revenue.toFixed(2)} €</span>
-            <div className="payment-split-bar-track">
-              <div
-                className="payment-split-bar cash"
-                style={{
-                  width: data.payment.cash_revenue + data.payment.card_revenue > 0
-                    ? `${(data.payment.cash_revenue / (data.payment.cash_revenue + data.payment.card_revenue)) * 100}%`
-                    : '0%'
-                }}
-              />
-            </div>
-          </div>
-          <div className="payment-split-divider" />
-          <div className="payment-split-item">
-            <span className="payment-split-icon">💳</span>
-            <span className="payment-split-label">Karte</span>
-            <span className="payment-split-count">{data.payment.card_count} Artikel</span>
-            <span className="payment-split-amount">{data.payment.card_revenue.toFixed(2)} €</span>
-            <div className="payment-split-bar-track">
-              <div
-                className="payment-split-bar card"
-                style={{
-                  width: data.payment.cash_revenue + data.payment.card_revenue > 0
-                    ? `${(data.payment.card_revenue / (data.payment.cash_revenue + data.payment.card_revenue)) * 100}%`
-                    : '0%'
-                }}
-              />
-            </div>
-          </div>
+          {(() => {
+            const p = data.payment || { cash_count: 0, card_count: 0, cash_revenue: 0, card_revenue: 0 };
+            const total = p.cash_revenue + p.card_revenue;
+            return (<>
+              <div className="payment-split-item">
+                <span className="payment-split-icon">💵</span>
+                <span className="payment-split-label">Bar</span>
+                <span className="payment-split-count">{p.cash_count} Artikel</span>
+                <span className="payment-split-amount">{p.cash_revenue.toFixed(2)} €</span>
+                <div className="payment-split-bar-track">
+                  <div className="payment-split-bar cash" style={{ width: total > 0 ? `${(p.cash_revenue / total) * 100}%` : '0%' }} />
+                </div>
+              </div>
+              <div className="payment-split-divider" />
+              <div className="payment-split-item">
+                <span className="payment-split-icon">💳</span>
+                <span className="payment-split-label">Karte</span>
+                <span className="payment-split-count">{p.card_count} Artikel</span>
+                <span className="payment-split-amount">{p.card_revenue.toFixed(2)} €</span>
+                <div className="payment-split-bar-track">
+                  <div className="payment-split-bar card" style={{ width: total > 0 ? `${(p.card_revenue / total) * 100}%` : '0%' }} />
+                </div>
+              </div>
+            </>);
+          })()}
         </div>
       </div>
 
