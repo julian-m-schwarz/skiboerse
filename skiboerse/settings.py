@@ -141,17 +141,29 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-] + [f"http://{host}" for host in ALLOWED_HOSTS if host not in ("*", "")]
+CORS_ALLOWED_ORIGINS = (
+    [
+        "http://localhost:3000",
+        "https://localhost:3000",
+        "http://localhost:5173",
+        "https://localhost:5173",
+    ]
+    + [f"http://{host}" for host in ALLOWED_HOSTS if host not in ("*", "")]
+    + [f"https://{host}" for host in ALLOWED_HOSTS if host not in ("*", "")]
+)
 
 CORS_ALLOW_CREDENTIALS = True
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-] + [f"http://{host}" for host in ALLOWED_HOSTS if host not in ("*", "")]
+CSRF_TRUSTED_ORIGINS = (
+    [
+        "http://localhost:3000",
+        "https://localhost:3000",
+        "http://localhost:5173",
+        "https://localhost:5173",
+    ]
+    + [f"http://{host}" for host in ALLOWED_HOSTS if host not in ("*", "")]
+    + [f"https://{host}" for host in ALLOWED_HOSTS if host not in ("*", "")]
+)
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
