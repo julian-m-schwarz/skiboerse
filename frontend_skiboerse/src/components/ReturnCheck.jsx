@@ -53,6 +53,7 @@ function ReturnCheckToggle() {
 function ReturnCheck() {
   const { user, logout } = useAuth();
   const isReporter = user?.role === 'reporter';
+  const isAdmin = user?.role === 'admin';
   const [barcodeInput, setBarcodeInput] = useState('');
   const [scanMode, setScanMode] = useState(null);
   const [foundItem, setFoundItem] = useState(null);
@@ -232,7 +233,7 @@ function ReturnCheck() {
         </Link>
       </div>
 
-      {!isReporter && <ReturnCheckToggle />}
+      {isAdmin && <ReturnCheckToggle />}
 
       {error && <div className="error">{error}</div>}
       {successMessage && <div className="success">{successMessage}</div>}
