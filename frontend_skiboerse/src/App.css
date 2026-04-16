@@ -2280,8 +2280,8 @@ body {
   background: var(--color-snow);
   border-radius: var(--border-radius);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  width: 90%;
-  max-width: 440px;
+  width: 95%;
+  max-width: 600px;
   overflow: hidden;
   animation: popupSlideUp 0.3s ease-out;
 }
