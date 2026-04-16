@@ -19,6 +19,24 @@ function Checkout() {
     inputRef.current?.focus();
   }, []);
 
+  const normalizeBarcode = (input) => {
+    const trimmed = input.trim();
+    // Already correct format (e.g. from scanner)
+    if (/^S\d{3}-\d{3}$/i.test(trimmed)) return trimmed.toUpperCase();
+    // Strip leading S if someone typed it anyway
+    const digits = trimmed.replace(/^[Ss]/, '');
+    let seller, item;
+    if (digits.includes('-')) {
+      [seller, item] = digits.split('-');
+    } else if (digits.length === 6) {
+      seller = digits.slice(0, 3);
+      item = digits.slice(3);
+    } else {
+      return `S${digits}`;
+    }
+    return `S${seller.padStart(3, '0')}-${item.padStart(3, '0')}`;
+  };
+
   const handleBarcodeSubmit = async (e) => {
     e.preventDefault();
     if (!barcodeInput.trim()) return;
@@ -26,9 +44,11 @@ function Checkout() {
     setLoading(true);
     setError(null);
 
+    const barcode = normalizeBarcode(barcodeInput);
+
     try {
       const response = await apiFetch(
-        `/api/items/by_barcode/?barcode=${barcodeInput}`
+        `/api/items/by_barcode/?barcode=${barcode}`
       );
 
       if (!response.ok) {
@@ -118,7 +138,7 @@ function Checkout() {
         <div className="barcode-scanner">
           <form onSubmit={handleBarcodeSubmit}>
             <label htmlFor="barcode" className="form-label">
-              Barcode scannen oder eingeben
+              Barcode scannen oder Nummer eingeben (z. B. 001-001)
             </label>
             <div className="barcode-input-group">
               <input
@@ -128,7 +148,7 @@ function Checkout() {
                 value={barcodeInput}
                 onChange={(e) => setBarcodeInput(e.target.value)}
                 className="form-input barcode-input"
-                placeholder="S001-001"
+                placeholder="001-001"
                 disabled={loading}
               />
               <button type="submit" className="btn btn-primary" disabled={loading}>
