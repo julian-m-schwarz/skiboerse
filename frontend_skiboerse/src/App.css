@@ -557,6 +557,38 @@ body {
   position: relative;
 }
 
+/* Sole length → EU conversion (Skischuhe) */
+.sole-length-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sole-length-inputs {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.sole-length-inputs input {
+  flex: 1;
+}
+
+.sole-eu-field {
+  max-width: 80px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.sole-conversion-hint {
+  font-size: 0.8rem;
+  color: var(--color-sky);
+  font-weight: 500;
+}
+
+.sole-conversion-error {
+  color: #E74C3C;
+}
+
 .brand-suggestions {
   position: absolute;
   top: 100%;

@@ -3,6 +3,27 @@ import { useNavigate, useParams, useLocation, Link } from 'react-router-dom';
 import DeviceStatus from './DeviceStatus';
 import { apiFetch } from '../api';
 
+// Sole length (mm) → EU shoe size for ski boots
+const soleToEU = (mm) => {
+  const n = parseInt(mm);
+  if (isNaN(n)) return null;
+  if (n < 210) return null;
+  if (n < 220) return '34';
+  if (n < 227) return '35';
+  if (n < 233) return '36';
+  if (n < 240) return '37';
+  if (n < 247) return '38';
+  if (n < 253) return '39';
+  if (n < 260) return '40';
+  if (n < 267) return '41';
+  if (n < 273) return '42';
+  if (n < 280) return '43';
+  if (n < 287) return '44';
+  if (n < 293) return '45';
+  if (n < 300) return '46';
+  return '47';
+};
+
 // Brand suggestions per category
 const brandsByCategory = {
   Ski: ['Atomic', 'Blizzard', 'Dynastar', 'Elan', 'Fischer', 'Head', 'K2', 'Nordica', 'Rossignol', 'Salomon', 'Völkl'],
@@ -50,6 +71,7 @@ function ItemForm() {
   const [sellerItems, setSellerItems] = useState([]);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
   const [filteredBrands, setFilteredBrands] = useState([]);
+  const [soleLengthInput, setSoleLengthInput] = useState('');
   const brandInputRef = useRef(null);
 
   useEffect(() => {
@@ -195,9 +217,10 @@ function ItemForm() {
     }
 
     if (name === 'category') {
-      // Reset brand suggestions when category changes
+      // Reset brand suggestions and sole length when category changes
       setShowBrandSuggestions(false);
       setFilteredBrands([]);
+      setSoleLengthInput('');
     }
 
     setFormData(prev => ({
@@ -309,6 +332,7 @@ function ItemForm() {
           price: '',
           seller: currentSeller.id
         });
+        setSoleLengthInput('');
         fetchSellerItems();
       } else if (isEditMode && currentSeller) {
         // After editing, navigate back to item entry for the seller
@@ -380,6 +404,7 @@ function ItemForm() {
         price: '',
         seller: currentSeller.id
       });
+      setSoleLengthInput('');
       fetchSellerItems();
 
       await finishAcceptance();
@@ -548,15 +573,56 @@ function ItemForm() {
 
               <div className="form-group">
                 <label htmlFor="size" className="form-label">Größe</label>
-                <input
-                  type="text"
-                  id="size"
-                  name="size"
-                  value={formData.size}
-                  onChange={handleChange}
-                  className="form-input"
-                  placeholder="z.B. 170cm, M, 42"
-                />
+                {formData.category === 'Skischuhe' ? (
+                  <div className="sole-length-group">
+                    <div className="sole-length-inputs">
+                      <input
+                        type="number"
+                        id="soleLength"
+                        value={soleLengthInput}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSoleLengthInput(val);
+                          const eu = soleToEU(val);
+                          if (eu) setFormData(prev => ({ ...prev, size: eu }));
+                        }}
+                        className="form-input"
+                        placeholder="Sohlenlänge mm"
+                        min="210"
+                        max="320"
+                      />
+                      <input
+                        type="text"
+                        id="size"
+                        name="size"
+                        value={formData.size}
+                        onChange={handleChange}
+                        className="form-input sole-eu-field"
+                        placeholder="EU"
+                      />
+                    </div>
+                    {soleLengthInput && soleToEU(soleLengthInput) && (
+                      <span className="sole-conversion-hint">
+                        {soleLengthInput} mm → EU {soleToEU(soleLengthInput)}
+                      </span>
+                    )}
+                    {soleLengthInput && !soleToEU(soleLengthInput) && (
+                      <span className="sole-conversion-hint sole-conversion-error">
+                        Ungültige Sohlenlänge
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    id="size"
+                    name="size"
+                    value={formData.size}
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder="z.B. 170cm, M, 42"
+                  />
+                )}
               </div>
             </div>
 
