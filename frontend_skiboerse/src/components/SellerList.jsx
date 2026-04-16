@@ -78,65 +78,53 @@ function SellerList() {
           </Link>
         </div>
       ) : (
-        <div className="seller-grid">
-          {sellers.map((seller) => (
-            <div
-              key={seller.id}
-              className="seller-card-compact"
-              onClick={() => handleCardClick(seller.id)}
-            >
-              <div className="seller-card-header">
-                <h3 className="seller-name">{seller.full_name}</h3>
-                <span className="seller-number">#{seller.seller_number}</span>
-              </div>
-
-              <div className="seller-card-info">
-                <div className="info-item">
-                  <span className="info-icon">📱</span>
-                  <span>{seller.mobile_number}</span>
-                </div>
-                <div className="info-item">
-                  <span className="info-icon">📦</span>
-                  <span>{seller.item_count} {seller.item_count === 1 ? 'Artikel' : 'Artikel'}</span>
-                </div>
-                {!seller.is_member && seller.acceptance_fee && (
-                  <div className="info-item">
-                    <span className="info-icon">💶</span>
-                    <span>Gebühr: {seller.acceptance_fee.toFixed(2)} €</span>
-                  </div>
-                )}
-              </div>
-
-              {(seller.is_member || seller.acceptance_fee_paid) && (
-                <div className="seller-badges">
+        <table className="seller-table">
+          <thead>
+            <tr>
+              <th>Nr.</th>
+              <th>Name</th>
+              <th>Telefon</th>
+              <th>Artikel</th>
+              <th>Status</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sellers.map((seller) => (
+              <tr
+                key={seller.id}
+                className="seller-table-row"
+                onClick={() => handleCardClick(seller.id)}
+              >
+                <td className="seller-table-nr">#{seller.seller_number}</td>
+                <td className="seller-table-name">{seller.full_name}</td>
+                <td>{seller.mobile_number}</td>
+                <td>{seller.item_count}</td>
+                <td>
                   {seller.is_member && <span className="badge badge-member">Mitglied</span>}
-                  {seller.acceptance_fee_paid && <span className="badge badge-paid">Gebühr bezahlt</span>}
-                </div>
-              )}
-
-              {!seller.is_member && !seller.acceptance_fee_paid && (
-                <div className="fee-warning">
-                  ⚠️ Annahmegebühr: {seller.acceptance_fee?.toFixed(2) || '0.00'} €
-                </div>
-              )}
-
-              <div className="seller-card-actions">
-                <button
-                  onClick={(e) => handleEditClick(seller.id, e)}
-                  className="btn btn-secondary btn-small btn-full"
-                >
-                  Bearbeiten
-                </button>
-                <button
-                  onClick={(e) => deleteSeller(seller.id, e)}
-                  className="btn btn-danger btn-small btn-full"
-                >
-                  Löschen
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+                  {!seller.is_member && seller.acceptance_fee_paid && <span className="badge badge-paid">Gebühr bezahlt</span>}
+                  {!seller.is_member && !seller.acceptance_fee_paid && (
+                    <span className="badge badge-fee-open">⚠️ {seller.acceptance_fee?.toFixed(2) || '0.00'} €</span>
+                  )}
+                </td>
+                <td className="seller-table-actions" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={(e) => handleEditClick(seller.id, e)}
+                    className="btn btn-secondary btn-small"
+                  >
+                    Bearbeiten
+                  </button>
+                  <button
+                    onClick={(e) => deleteSeller(seller.id, e)}
+                    className="btn btn-danger btn-small"
+                  >
+                    Löschen
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );
