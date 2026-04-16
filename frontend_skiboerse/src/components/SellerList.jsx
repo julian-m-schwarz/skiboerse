@@ -17,7 +17,7 @@ function SellerList() {
       const response = await apiFetch('/api/sellers/');
       if (!response.ok) throw new Error('Verkäufer konnten nicht geladen werden');
       const data = await response.json();
-      setSellers(data);
+      setSellers(data.sort((a, b) => a.seller_number - b.seller_number));
     } catch (err) {
       setError(err.message);
     } finally {
