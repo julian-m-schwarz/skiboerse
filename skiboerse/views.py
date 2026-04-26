@@ -60,7 +60,6 @@ class SellerViewSet(viewsets.ModelViewSet):
         return Response(payout_data)
 
     @action(detail=True, methods=['post'])
-    @action(detail=True, methods=['post'])
     def bulk_return(self, request, pk=None):
         """
         Mark all unreturned unsold items as returned.
@@ -71,6 +70,7 @@ class SellerViewSet(viewsets.ModelViewSet):
         updated = seller.items.filter(is_sold=False, returned_at__isnull=True).update(returned_at=now)
         return Response({'success': True, 'returned_count': updated})
 
+    @action(detail=True, methods=['post'])
     def pickup(self, request, pk=None):
         """
         Mark all seller's items as picked up.
