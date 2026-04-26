@@ -185,7 +185,7 @@ function ItemList() {
                       </span>
                     ) : item.picked_up_at ? (
                       <span className="status-badge status-picked-up">
-                        Abgeholt
+                        Abgeholt{item.is_stolen ? ' 🥷' : ''}
                         <span className="returned-timestamp">
                           {new Date(item.picked_up_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </span>
