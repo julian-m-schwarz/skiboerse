@@ -1,13 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { apiFetch } from '../api';
 
-/**
- * DeviceStatus - Shows connection status for barcode scanner or label printer.
- * Props:
- *   deviceType: "scanner" | "printer"
- *   label: Display label (e.g., "Barcode Scanner", "Label Printer")
- */
-function DeviceStatus({ deviceType, label }) {
+const DeviceStatus = forwardRef(function DeviceStatus({ deviceType, label }, ref) {
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const intervalRef = useRef(null);
@@ -25,6 +19,10 @@ function DeviceStatus({ deviceType, label }) {
       setLoading(false);
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    refresh: checkDeviceStatus,
+  }));
 
   useEffect(() => {
     checkDeviceStatus();
@@ -66,5 +64,7 @@ function DeviceStatus({ deviceType, label }) {
     </div>
   );
 }
+
+});
 
 export default DeviceStatus;
