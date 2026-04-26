@@ -1,7 +1,20 @@
+# Web framework
 Django>=4.2,<5.0
 djangorestframework>=3.14
 django-cors-headers>=4.0
+
+# Database
 psycopg2-binary>=2.9
+
+# WSGI server (production)
 gunicorn>=21.2
+
+# Barcode & image generation (label printing)
 python-barcode>=0.15
 Pillow>=10.0
+
+# Caching (used by return-check toggle via django.core.cache)
+# FileBasedCache is built into Django — no extra package needed
+
+# Sessions (built into Django — listed here for documentation)
+# django.contrib.sessions
