@@ -134,6 +134,7 @@ class ItemSerializer(serializers.ModelSerializer):
             "seller_mobile",
             "barcode",
             "is_sold",
+            "is_stolen",
             "sold_at",
             "returned_at",
             "picked_up_at",

@@ -190,6 +190,8 @@ function ItemList() {
                           {new Date(item.picked_up_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </span>
+                    ) : item.is_stolen ? (
+                      <span className="status-badge status-stolen">🚨 Gestohlen</span>
                     ) : item.returned_at ? (
                       <>
                         <span className="status-badge status-available">Verfügbar</span>

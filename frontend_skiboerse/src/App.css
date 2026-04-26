@@ -2225,6 +2225,12 @@ body {
   white-space: nowrap;
 }
 
+/* Stolen status badge */
+.status-stolen {
+  background: #F3E5F5;
+  color: #7B1FA2;
+}
+
 /* Picked up status badge */
 .status-picked-up {
   background: #E8F5E9;
