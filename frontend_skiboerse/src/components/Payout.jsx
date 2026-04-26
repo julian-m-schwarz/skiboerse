@@ -409,9 +409,19 @@ function Payout() {
             <div className="popup-actions">
               <button
                 onClick={() => setShowWarningPopup(false)}
-                className="btn btn-primary"
+                className="btn btn-secondary"
               >
-                Verstanden
+                Abbrechen
+              </button>
+              <button
+                onClick={async () => {
+                  await apiFetch(`/api/sellers/${payoutData.seller.id}/bulk_return/`, { method: 'POST' });
+                  setShowWarningPopup(false);
+                  setShowConfirmPopup(true);
+                }}
+                className="btn btn-success"
+              >
+                ✓ Alle Artikel wurden zurückgegeben
               </button>
             </div>
           </div>
