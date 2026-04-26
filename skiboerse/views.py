@@ -69,7 +69,7 @@ class SellerViewSet(viewsets.ModelViewSet):
         """
         seller = self.get_object()
         now = timezone.now()
-        updated = seller.items.filter(is_sold=False, returned_at__isnull=True).update(returned_at=now)
+        updated = seller.items.filter(is_sold=False, returned_at__isnull=True, is_stolen=False).update(returned_at=now)
         return Response({'success': True, 'returned_count': updated})
 
     @action(detail=True, methods=['post'])
