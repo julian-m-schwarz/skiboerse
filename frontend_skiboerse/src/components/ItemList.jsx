@@ -160,7 +160,7 @@ function ItemList() {
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={item.id} className={item.is_sold ? 'sold-row' : ''}>
+                <tr key={item.id} className={item.is_sold || item.picked_up_at ? 'sold-row' : ''}>
                   <td className="barcode-cell">{item.barcode}</td>
                   <td>{item.category}</td>
                   <td>{item.brand || '-'}</td>
