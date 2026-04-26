@@ -91,11 +91,7 @@ class SellerViewSet(viewsets.ModelViewSet):
         now = timezone.now()
         updated_count = seller.items.filter(picked_up_at__isnull=True).update(picked_up_at=now)
 
-        return Response({
-            'success': True,
-            'message': f'{updated_count} Artikel als abgeholt markiert',
-            'picked_up_at': now.isoformat()
-        })
+        return Response({'success': True, 'updated': updated_count})
 
 
 class ItemViewSet(viewsets.ModelViewSet):

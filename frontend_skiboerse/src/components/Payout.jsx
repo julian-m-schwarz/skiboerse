@@ -81,20 +81,19 @@ function Payout() {
   const handleCompletePayout = async () => {
     setShowConfirmPopup(false);
     try {
-      // Mark all items as picked up
       const response = await apiFetch(`/api/sellers/${payoutData.seller.id}/pickup/`, {
         method: 'POST',
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        alert(data.error || 'Fehler beim Abschließen der Auszahlung');
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || 'Fehler beim Abschließen der Auszahlung');
         return;
       }
 
       setPayoutCompleted(true);
     } catch (err) {
-      alert('Fehler: ' + err.message);
+      setError('Fehler beim Abschließen: ' + (err.message || 'Unbekannter Fehler'));
     }
   };
 
@@ -415,9 +414,14 @@ function Payout() {
               </button>
               <button
                 onClick={async () => {
-                  await apiFetch(`/api/sellers/${payoutData.seller.id}/bulk_return/`, { method: 'POST' });
-                  setShowWarningPopup(false);
-                  setShowConfirmPopup(true);
+                  try {
+                    await apiFetch(`/api/sellers/${payoutData.seller.id}/bulk_return/`, { method: 'POST' });
+                    setShowWarningPopup(false);
+                    setShowConfirmPopup(true);
+                  } catch (err) {
+                    setShowWarningPopup(false);
+                    setError('Fehler beim Markieren der Artikel: ' + (err.message || 'Unbekannter Fehler'));
+                  }
                 }}
                 className="btn btn-success"
               >
