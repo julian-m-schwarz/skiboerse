@@ -548,37 +548,46 @@ function Payout() {
                 <p className="confirm-seller-name">{payoutData?.seller?.full_name}</p>
                 <p className="confirm-seller-number">Verkäufer #{payoutData?.seller?.seller_number}</p>
               </div>
-              <div className="payout-confirm-row">
-                <div className={`payout-confirm-amount ${payoutData?.final_payout < 0 ? 'negative' : ''}`}>
-                  <span className="confirm-amount-label">
-                    {payoutData?.final_payout < 0 ? 'Noch zu zahlen' : 'Auszahlungsbetrag'}
-                  </span>
-                  <span className="confirm-amount-value">
-                    {payoutData?.final_payout < 0
-                      ? `${Math.abs(payoutData?.final_payout)?.toFixed(2)} €`
-                      : `${payoutData?.final_payout?.toFixed(2)} €`
-                    }
+              <div className="payout-confirm-breakdown">
+                <div className="confirm-detail-row">
+                  <span>Verkaufte Artikel ({payoutData?.sold_items_count})</span>
+                  <span>
+                    {payoutData?.stolen_revenue > 0
+                      ? ((payoutData?.total_sales ?? 0) - (payoutData?.stolen_revenue ?? 0)).toFixed(2)
+                      : (payoutData?.total_sales ?? 0).toFixed(2)} €
                   </span>
                 </div>
-                <div className="payout-confirm-details">
+                {payoutData?.stolen_revenue > 0 && (
                   <div className="confirm-detail-row">
-                    <span>Verkaufte Artikel:</span>
-                    <span>{payoutData?.sold_items_count}</span>
+                    <span>🥷 Gestohlen ({payoutData?.stolen_items_count})</span>
+                    <span>+{payoutData?.stolen_revenue?.toFixed(2)} €</span>
                   </div>
-                  <div className="confirm-detail-row">
-                    <span>Gesamtverkauf:</span>
-                    <span>{payoutData?.total_sales?.toFixed(2)} €</span>
+                )}
+                <div className="confirm-detail-row confirm-detail-subtotal">
+                  <span>Gesamtumsatz</span>
+                  <span>{payoutData?.total_sales?.toFixed(2)} €</span>
+                </div>
+                <div className="confirm-detail-row confirm-detail-deduction">
+                  <span>− Provision (10%)</span>
+                  <span>−{payoutData?.commission?.toFixed(2)} €</span>
+                </div>
+                {!payoutData?.acceptance_fee_paid && payoutData?.fee_deducted > 0 && (
+                  <div className="confirm-detail-row confirm-detail-deduction">
+                    <span>− Annahmegebühr</span>
+                    <span>−{payoutData?.fee_deducted?.toFixed(2)} €</span>
                   </div>
-                  <div className="confirm-detail-row">
-                    <span>Provision (10%):</span>
-                    <span>-{payoutData?.commission?.toFixed(2)} €</span>
+                )}
+                {payoutData?.acceptance_fee_paid && (
+                  <div className="confirm-detail-row confirm-detail-info">
+                    <span>✓ Annahmegebühr (bereits bezahlt)</span>
+                    <span>0,00 €</span>
                   </div>
-                  {!payoutData?.acceptance_fee_paid && payoutData?.fee_deducted > 0 && (
-                    <div className="confirm-detail-row">
-                      <span>Annahmegebühr:</span>
-                      <span>-{payoutData?.fee_deducted?.toFixed(2)} €</span>
-                    </div>
-                  )}
+                )}
+                <div className="confirm-detail-row confirm-detail-total">
+                  <span>{payoutData?.final_payout < 0 ? 'Noch zu zahlen' : 'Auszahlungsbetrag'}</span>
+                  <span className={payoutData?.final_payout < 0 ? 'negative' : 'positive'}>
+                    {Math.abs(payoutData?.final_payout ?? 0).toFixed(2)} €
+                  </span>
                 </div>
               </div>
             </div>
