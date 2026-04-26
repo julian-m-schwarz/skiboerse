@@ -88,10 +88,14 @@ class Seller(models.Model):
         """
         all_items = list(self.items.all())
         sold_items = [item for item in all_items if item.is_sold]
-        total_sales = sum(float(item.price) for item in sold_items)
+        stolen_items = [item for item in all_items if item.is_stolen and not item.is_sold]
 
-        # Calculate 10% commission
-        commission = total_sales * 0.10
+        total_sales = sum(float(item.price) for item in sold_items)
+        stolen_revenue = sum(float(item.price) for item in stolen_items)
+        total_revenue = total_sales + stolen_revenue
+
+        # Calculate 10% commission on total (sold + stolen)
+        commission = total_revenue * 0.10
 
         # Calculate acceptance fee
         acceptance_fee = self.calculate_acceptance_fee()
@@ -100,16 +104,18 @@ class Seller(models.Model):
         fee_to_deduct = 0 if self.acceptance_fee_paid else acceptance_fee
 
         # Final payout
-        final_payout = total_sales - commission - fee_to_deduct
+        final_payout = total_revenue - commission - fee_to_deduct
 
         return {
-            "total_sales": round(total_sales, 2),
+            "total_sales": round(total_revenue, 2),
             "commission": round(commission, 2),
             "acceptance_fee": round(acceptance_fee, 2),
             "acceptance_fee_paid": self.acceptance_fee_paid,
             "fee_deducted": round(fee_to_deduct, 2),
             "final_payout": round(final_payout, 2),
             "sold_items_count": len(sold_items),
+            "stolen_items_count": len(stolen_items),
+            "stolen_revenue": round(stolen_revenue, 2),
             "total_items_count": len(all_items),
         }
 
@@ -155,6 +161,7 @@ class Item(models.Model):
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name="items")
     barcode = models.CharField(max_length=20, unique=True, editable=False, blank=True)
     is_sold = models.BooleanField(default=False, db_index=True)
+    is_stolen = models.BooleanField(default=False, db_index=True)
     sold_at = models.DateTimeField(null=True, blank=True)
     returned_at = models.DateTimeField(null=True, blank=True, db_index=True)
     picked_up_at = models.DateTimeField(null=True, blank=True, db_index=True)

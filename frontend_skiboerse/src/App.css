@@ -1577,6 +1577,22 @@ body {
   background: #FDEDED;
 }
 
+.unsold-subtitle.stolen {
+  color: #7B1FA2;
+  background: #F3E5F5;
+}
+
+.stolen-item {
+  background: #FDF6FF;
+  border-left: 3px solid #AB47BC;
+}
+
+.stolen-btn {
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .sold-items-list {
   background: var(--color-ice);
   border-radius: var(--border-radius);

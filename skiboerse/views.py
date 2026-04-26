@@ -50,10 +50,12 @@ class SellerViewSet(viewsets.ModelViewSet):
         all_items = list(seller.items.select_related('seller').all())
         sold_items = [i for i in all_items if i.is_sold]
         unsold_returned = [i for i in all_items if not i.is_sold and i.returned_at]
-        unsold_not_returned = [i for i in all_items if not i.is_sold and not i.returned_at]
+        stolen_items = [i for i in all_items if i.is_stolen and not i.is_sold]
+        unsold_not_returned = [i for i in all_items if not i.is_sold and not i.returned_at and not i.is_stolen]
 
         payout_data['sold_items'] = ItemBarcodeSerializer(sold_items, many=True).data
         payout_data['unsold_returned'] = ItemBarcodeSerializer(unsold_returned, many=True).data
+        payout_data['stolen_items'] = ItemBarcodeSerializer(stolen_items, many=True).data
         payout_data['unsold_not_returned'] = ItemBarcodeSerializer(unsold_not_returned, many=True).data
         payout_data['seller_all_done'] = len(unsold_not_returned) == 0
 
@@ -79,8 +81,8 @@ class SellerViewSet(viewsets.ModelViewSet):
         """
         seller = self.get_object()
 
-        # Check if all items are sold or returned
-        pending_items = seller.items.filter(is_sold=False, returned_at__isnull=True)
+        # Check if all items are sold, returned, or marked as stolen
+        pending_items = seller.items.filter(is_sold=False, returned_at__isnull=True, is_stolen=False)
         if pending_items.count() > 0:
             return Response(
                 {'error': 'Nicht alle Artikel wurden zurückgemeldet', 'pending_count': pending_items.count()},

@@ -170,6 +170,7 @@ class ItemBarcodeSerializer(serializers.ModelSerializer):
             "seller_name",
             "barcode",
             "is_sold",
+            "is_stolen",
             "returned_at",
             "picked_up_at",
             "payment_method",

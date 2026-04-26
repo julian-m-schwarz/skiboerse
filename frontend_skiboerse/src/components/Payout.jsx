@@ -252,8 +252,22 @@ function Payout() {
           <div className="payout-calculation">
             <h3 className="section-title">Auszahlungsberechnung</h3>
 
+            {payoutData.stolen_revenue > 0 && (
+              <div className="calculation-row">
+                <span className="calc-label">Verkaufte Artikel</span>
+                <span className="calc-value positive">
+                  {(payoutData.total_sales - payoutData.stolen_revenue).toFixed(2)} €
+                </span>
+              </div>
+            )}
+            {payoutData.stolen_revenue > 0 && (
+              <div className="calculation-row">
+                <span className="calc-label">🚨 Diebstahl-Erstattung ({payoutData.stolen_items?.length})</span>
+                <span className="calc-value positive">+{payoutData.stolen_revenue.toFixed(2)} €</span>
+              </div>
+            )}
             <div className="calculation-row">
-              <span className="calc-label">Gesamtverkauf</span>
+              <span className="calc-label">Gesamtbetrag</span>
               <span className="calc-value positive">{payoutData.total_sales.toFixed(2)} €</span>
             </div>
 
@@ -342,6 +356,38 @@ function Payout() {
                     {payoutData.unsold_not_returned.map((item) => (
                       <div key={item.id} className="sold-item">
                         <span className="item-barcode">{item.barcode}</span>
+                        <span className="item-details">
+                          {item.category} {item.brand && `- ${item.brand}`}
+                          {item.size && ` (${item.size})`}
+                        </span>
+                        <span className="item-price">{item.price} €</span>
+                        <button
+                          className="btn btn-danger btn-small stolen-btn"
+                          title="Als gestohlen markieren"
+                          onClick={async () => {
+                            await apiFetch(`/api/items/${item.id}/`, {
+                              method: 'PATCH',
+                              body: JSON.stringify({ is_stolen: true }),
+                            });
+                            const res = await apiFetch(`/api/sellers/${payoutData.seller.id}/payout/`);
+                            if (res.ok) setPayoutData(await res.json());
+                          }}
+                        >
+                          🚨 Gestohlen
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {payoutData.stolen_items?.length > 0 && (
+                <div className="unsold-subsection">
+                  <h4 className="unsold-subtitle stolen">🚨 Gestohlen — wird erstattet ({payoutData.stolen_items.length})</h4>
+                  <div className="sold-items-list">
+                    {payoutData.stolen_items.map((item) => (
+                      <div key={item.id} className="sold-item stolen-item">
+                        <span className="item-barcode">🚨 {item.barcode}</span>
                         <span className="item-details">
                           {item.category} {item.brand && `- ${item.brand}`}
                           {item.size && ` (${item.size})`}
