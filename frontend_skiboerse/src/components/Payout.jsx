@@ -11,6 +11,8 @@ function Payout() {
   const [pendingItems, setPendingItems] = useState(null);
   const [pendingLoading, setPendingLoading] = useState(false);
   const [showWarningPopup, setShowWarningPopup] = useState(false);
+  const [showStolenPopup, setShowStolenPopup] = useState(false);
+  const [stolenSelected, setStolenSelected] = useState(new Set());
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
 
   const fetchPendingItems = async () => {
@@ -361,20 +363,6 @@ function Payout() {
                           {item.size && ` (${item.size})`}
                         </span>
                         <span className="item-price">{item.price} €</span>
-                        <button
-                          className="btn btn-danger btn-small stolen-btn"
-                          title="Als gestohlen markieren"
-                          onClick={async () => {
-                            await apiFetch(`/api/items/${item.id}/`, {
-                              method: 'PATCH',
-                              body: JSON.stringify({ is_stolen: true }),
-                            });
-                            const res = await apiFetch(`/api/sellers/${payoutData.seller.id}/payout/`);
-                            if (res.ok) setPayoutData(await res.json());
-                          }}
-                        >
-                          🚨 Gestohlen
-                        </button>
                       </div>
                     ))}
                   </div>
@@ -459,19 +447,89 @@ function Payout() {
                 Abbrechen
               </button>
               <button
+                onClick={() => {
+                  setStolenSelected(new Set());
+                  setShowWarningPopup(false);
+                  setShowStolenPopup(true);
+                }}
+                className="btn btn-primary"
+              >
+                Weiter →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stolen Selection Popup */}
+      {showStolenPopup && (
+        <div className="popup-overlay" onClick={() => setShowStolenPopup(false)}>
+          <div className="popup-card popup-card-wide" onClick={(e) => e.stopPropagation()}>
+            <div className="popup-header warning">
+              <h3>🚨 Gestohlene Artikel auswählen</h3>
+            </div>
+            <div className="popup-body">
+              <p className="warning-message">
+                Welche Artikel wurden gestohlen? Diese werden dem Verkäufer erstattet (Preis − 10% Provision).
+              </p>
+              <div className="stolen-checklist">
+                {payoutData?.unsold_not_returned?.map((item) => (
+                  <label key={item.id} className="stolen-check-row">
+                    <input
+                      type="checkbox"
+                      checked={stolenSelected.has(item.id)}
+                      onChange={(e) => {
+                        setStolenSelected((prev) => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(item.id);
+                          else next.delete(item.id);
+                          return next;
+                        });
+                      }}
+                    />
+                    <span className="stolen-check-barcode">{item.barcode}</span>
+                    <span className="stolen-check-details">
+                      {item.category}{item.brand && ` – ${item.brand}`}{item.size && ` (${item.size})`}
+                    </span>
+                    <span className="stolen-check-price">{item.price} €</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="popup-actions">
+              <button
+                onClick={() => {
+                  setShowStolenPopup(false);
+                  setShowWarningPopup(true);
+                }}
+                className="btn btn-secondary"
+              >
+                ← Zurück
+              </button>
+              <button
                 onClick={async () => {
                   try {
+                    for (const id of stolenSelected) {
+                      await apiFetch(`/api/items/${id}/`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ is_stolen: true }),
+                      });
+                    }
                     await apiFetch(`/api/sellers/${payoutData.seller.id}/bulk_return/`, { method: 'POST' });
-                    setShowWarningPopup(false);
+                    const res = await apiFetch(`/api/sellers/${payoutData.seller.id}/payout/`);
+                    if (res.ok) setPayoutData(await res.json());
+                    setShowStolenPopup(false);
                     setShowConfirmPopup(true);
                   } catch (err) {
-                    setShowWarningPopup(false);
-                    setError('Fehler beim Markieren der Artikel: ' + (err.message || 'Unbekannter Fehler'));
+                    setShowStolenPopup(false);
+                    setError('Fehler: ' + (err.message || 'Unbekannter Fehler'));
                   }
                 }}
                 className="btn btn-success"
               >
-                ✓ Alle Artikel wurden zurückgegeben
+                {stolenSelected.size > 0
+                  ? `Bestätigen (${stolenSelected.size} gestohlen)`
+                  : 'Bestätigen (keiner gestohlen)'}
               </button>
             </div>
           </div>
