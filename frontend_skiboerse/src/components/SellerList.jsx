@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../api';
+import { useAuth } from '../AuthContext';
 
 function SellerList() {
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     fetchSellers();
@@ -114,12 +117,14 @@ function SellerList() {
                   >
                     Bearbeiten
                   </button>
-                  <button
-                    onClick={(e) => deleteSeller(seller.id, e)}
-                    className="btn btn-danger btn-small"
-                  >
-                    Löschen
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={(e) => deleteSeller(seller.id, e)}
+                      className="btn btn-danger btn-small"
+                    >
+                      Löschen
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

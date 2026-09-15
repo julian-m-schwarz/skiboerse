@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../api';
+import { useAuth } from '../AuthContext';
 
 function ItemList() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [printingId, setPrintingId] = useState(null);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     fetchItems();
@@ -220,12 +223,14 @@ function ItemList() {
                     >
                       Bearbeiten
                     </Link>
-                    <button
-                      onClick={() => deleteItem(item.id)}
-                      className="btn btn-danger btn-small"
-                    >
-                      Löschen
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        className="btn btn-danger btn-small"
+                      >
+                        Löschen
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

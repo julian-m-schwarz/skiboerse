@@ -3,7 +3,7 @@ import platform
 from rest_framework import viewsets, status
 from django.db import transaction
 from rest_framework.decorators import api_view, action, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.sessions.models import Session
@@ -15,9 +15,29 @@ from .models import Seller, Item, Sale, UserProfile
 from .serializers import SellerSerializer, ItemSerializer, ItemBarcodeSerializer, SaleSerializer, UserWithRoleSerializer
 
 
+def is_admin(user):
+    """Check if user has admin role."""
+    if not user.is_authenticated:
+        return False
+    try:
+        return user.profile.role == 'admin' or user.is_superuser
+    except UserProfile.DoesNotExist:
+        return user.is_superuser
+
+
+class IsAdminForDestroy(BasePermission):
+    """Only admins may delete; all other actions are unaffected."""
+
+    def has_permission(self, request, view):
+        if view.action == 'destroy':
+            return is_admin(request.user)
+        return True
+
+
 class SellerViewSet(viewsets.ModelViewSet):
     queryset = Seller.objects.prefetch_related('items').all()
     serializer_class = SellerSerializer
+    permission_classes = [IsAuthenticated, IsAdminForDestroy]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -99,6 +119,7 @@ class SellerViewSet(viewsets.ModelViewSet):
 class ItemViewSet(viewsets.ModelViewSet):
     queryset = Item.objects.select_related('seller').prefetch_related('sales').all()
     serializer_class = ItemSerializer
+    permission_classes = [IsAuthenticated, IsAdminForDestroy]
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -500,16 +521,6 @@ def session_view(request):
             'role': profile.role,
         })
     return Response({'isAuthenticated': False})
-
-
-def is_admin(user):
-    """Check if user has admin role."""
-    if not user.is_authenticated:
-        return False
-    try:
-        return user.profile.role == 'admin' or user.is_superuser
-    except UserProfile.DoesNotExist:
-        return user.is_superuser
 
 
 @api_view(['GET'])
