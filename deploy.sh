@@ -48,7 +48,7 @@ python manage.py migrate --noinput
 # ── 5. Frontend bauen ─────────────────────────────────────────
 echo "→ [5/9] Frontend bauen..."
 cd "$FRONTEND"
-npm install --silent
+npm ci --silent
 npm run build
 cd "$REPO_DIR"
 
