@@ -45,20 +45,36 @@ class Seller(models.Model):
     mobile_number = models.CharField(max_length=20)
     is_member = models.BooleanField(default=False)
     acceptance_fee_paid = models.BooleanField(default=False)
+    is_major_seller = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    MAJOR_SELLER_START_NUMBER = 999
 
     def save(self, *args, **kwargs):
         if not self.seller_number:
             with transaction.atomic():
-                latest_seller = (
-                    Seller.objects.select_for_update()
-                    .order_by("-seller_number")
-                    .first()
-                )
-                if latest_seller and latest_seller.seller_number:
-                    self.seller_number = latest_seller.seller_number + 1
+                if self.is_major_seller:
+                    latest_major_seller = (
+                        Seller.objects.select_for_update()
+                        .filter(is_major_seller=True)
+                        .order_by("seller_number")
+                        .first()
+                    )
+                    if latest_major_seller and latest_major_seller.seller_number:
+                        self.seller_number = latest_major_seller.seller_number - 1
+                    else:
+                        self.seller_number = self.MAJOR_SELLER_START_NUMBER
                 else:
-                    self.seller_number = 1
+                    latest_seller = (
+                        Seller.objects.select_for_update()
+                        .filter(is_major_seller=False)
+                        .order_by("-seller_number")
+                        .first()
+                    )
+                    if latest_seller and latest_seller.seller_number:
+                        self.seller_number = latest_seller.seller_number + 1
+                    else:
+                        self.seller_number = 1
                 super().save(*args, **kwargs)
         else:
             super().save(*args, **kwargs)
@@ -66,12 +82,13 @@ class Seller(models.Model):
     def calculate_acceptance_fee(self):
         """
         Calculate acceptance fee based on item count and membership status.
+        - Major sellers: 0€
         - Members: 0€
         - Non-members with < 20 items: 5€
         - Non-members with >= 20 items: 10€
         Uses len() so a prefetched items cache is reused instead of issuing a COUNT query.
         """
-        if self.is_member:
+        if self.is_major_seller or self.is_member:
             return 0
 
         item_count = len(self.items.all())

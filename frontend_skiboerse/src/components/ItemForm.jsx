@@ -73,6 +73,7 @@ function ItemForm() {
   const [filteredBrands, setFilteredBrands] = useState([]);
   const [soleLengthInput, setSoleLengthInput] = useState('');
   const brandInputRef = useRef(null);
+  const categoryRef = useRef(null);
 
   useEffect(() => {
     fetchSellers();
@@ -93,6 +94,7 @@ function ItemForm() {
       if (sellerIdFromUrl) {
         setShowAddAnother(true);
       }
+      categoryRef.current?.focus();
     }
   }, [id]);
 
@@ -334,6 +336,7 @@ function ItemForm() {
         });
         setSoleLengthInput('');
         fetchSellerItems();
+        categoryRef.current?.focus();
       } else if (isEditMode && currentSeller) {
         // After editing, navigate back to item entry for the seller
         navigate(`/inventory/items/new?seller=${currentSeller.id}`);
@@ -504,6 +507,7 @@ function ItemForm() {
             <div className="form-group">
               <label htmlFor="category" className="form-label">Kategorie</label>
               <select
+                ref={categoryRef}
                 id="category"
                 name="category"
                 value={formData.category}

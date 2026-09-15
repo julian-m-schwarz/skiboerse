@@ -95,6 +95,7 @@ class SellerSerializer(serializers.ModelSerializer):
             "mobile_number",
             "is_member",
             "acceptance_fee_paid",
+            "is_major_seller",
             "acceptance_fee",
             "item_count",
             "created_at",

@@ -12,7 +12,8 @@ function SellerForm() {
     last_name: '',
     mobile_number: '',
     is_member: false,
-    acceptance_fee_paid: false
+    acceptance_fee_paid: false,
+    is_major_seller: false
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -225,6 +226,22 @@ function SellerForm() {
                 Ist Mitglied
               </label>
             </div>
+
+            {!isEditMode && (
+              <div className="form-checkbox-group">
+                <input
+                  type="checkbox"
+                  id="is_major_seller"
+                  name="is_major_seller"
+                  checked={formData.is_major_seller}
+                  onChange={handleCheckboxChange}
+                  className="form-checkbox"
+                />
+                <label htmlFor="is_major_seller" className="form-checkbox-label">
+                  Großverkäufer
+                </label>
+              </div>
+            )}
           </div>
         </div>
 
