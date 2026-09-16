@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation, Link } from 'react-router-dom';
 import DeviceStatus from './DeviceStatus';
 import { apiFetch } from '../api';
+import { printItemLabel } from '../printLabel';
 
 // Sole length (mm) → EU shoe size for ski boots
 const soleToEU = (mm) => {
@@ -68,6 +69,7 @@ function ItemForm() {
   const [showFeePopup, setShowFeePopup] = useState(false);
   const [acceptanceFee, setAcceptanceFee] = useState(0);
   const [printStatus, setPrintStatus] = useState(null);
+  const [printError, setPrintError] = useState(null);
   const [sellerItems, setSellerItems] = useState([]);
   const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
   const [filteredBrands, setFilteredBrands] = useState([]);
@@ -275,18 +277,11 @@ function ItemForm() {
   const printLabel = async (itemId) => {
     try {
       setPrintStatus('printing');
-      const response = await apiFetch(`/api/items/${itemId}/print_label/`, {
-        method: 'POST'
-      });
-      const data = await response.json();
-      if (data.success) {
-        setPrintStatus('success');
-      } else {
-        setPrintStatus('error');
-        console.error('Print error:', data.error);
-      }
+      await printItemLabel(itemId);
+      setPrintStatus('success');
     } catch (err) {
       setPrintStatus('error');
+      setPrintError(err.message);
       console.error('Print error:', err);
     }
     setTimeout(() => setPrintStatus(null), 3000);
@@ -476,7 +471,9 @@ function ItemForm() {
         <div className="success">2 Etiketten gedruckt</div>
       )}
       {printStatus === 'error' && (
-        <div className="error">Etiketten konnten nicht gedruckt werden</div>
+        <div className="error">
+          Etiketten konnten nicht gedruckt werden{printError ? `: ${printError}` : ''}
+        </div>
       )}
 
       {currentSeller && (
