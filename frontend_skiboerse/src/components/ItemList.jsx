@@ -83,7 +83,18 @@ function ItemList() {
                 page-break-before: always;
                 break-before: page;
               }
-              img { width: 54mm; height: auto; display: block; }
+              .label-page { overflow: hidden; }
+              /* Stay under the nominal page height. Safari reserves strips for
+                 headers/footers and some drivers report an imageable area
+                 smaller than the media, and an image taller than whatever is
+                 actually available spills onto an extra, empty label. */
+              img {
+                width: 100%;
+                max-height: 23mm;
+                height: auto;
+                object-fit: contain;
+                display: block;
+              }
             </style>
           </head>
           <body>
