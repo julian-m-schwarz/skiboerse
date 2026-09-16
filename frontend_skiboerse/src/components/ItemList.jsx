@@ -72,27 +72,29 @@ function ItemList() {
           <head>
             <title>Label ${data.barcode}</title>
             <style>
-              @page { margin: 0; size: auto; }
-              body {
-                margin: 0;
-                padding: 10px;
+              /* Dymo LabelWriter 400, Mehrzweck-Etiketten (30334 / S0722540), 54 x 25 mm */
+              @page { size: 54mm 25mm; margin: 0; }
+              * { margin: 0; padding: 0; }
+              html, body { width: 54mm; height: 25mm; }
+              .label-page {
+                width: 54mm;
+                height: 25mm;
                 display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
+                align-items: center;
                 justify-content: center;
+                page-break-after: always;
               }
+              .label-page:last-child { page-break-after: auto; }
               img {
-                max-width: 100%;
-                height: auto;
-              }
-              @media print {
-                body { padding: 0; }
+                max-width: 54mm;
+                max-height: 25mm;
+                object-fit: contain;
               }
             </style>
           </head>
           <body>
-            <img src="data:image/png;base64,${data.image}" alt="Label 1" />
-            <img src="data:image/png;base64,${data.image}" alt="Label 2" />
+            <div class="label-page"><img src="data:image/png;base64,${data.image}" alt="Label 1" /></div>
+            <div class="label-page"><img src="data:image/png;base64,${data.image}" alt="Label 2" /></div>
             <script>
               window.onload = function() {
                 setTimeout(function() {
