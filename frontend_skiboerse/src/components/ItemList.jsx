@@ -75,7 +75,7 @@ function ItemList() {
               /* Dymo LabelWriter 400, Mehrzweck-Etiketten (30334 / S0722540), 54 x 25 mm */
               @page { size: 54mm 25mm; margin: 0; }
               * { margin: 0; padding: 0; }
-              html, body { width: 54mm; height: 25mm; }
+              html, body { width: 54mm; }
               .label-page {
                 width: 54mm;
                 height: 25mm;
@@ -83,12 +83,14 @@ function ItemList() {
                 align-items: center;
                 justify-content: center;
                 page-break-after: always;
+                break-after: page;
               }
-              .label-page:last-child { page-break-after: auto; }
+              .label-page:last-child { page-break-after: auto; break-after: auto; }
               img {
                 max-width: 54mm;
                 max-height: 25mm;
                 object-fit: contain;
+                display: block;
               }
             </style>
           </head>

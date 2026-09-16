@@ -206,13 +206,26 @@ class ItemViewSet(viewsets.ModelViewSet):
             label_width = 500
             label_height = 250
 
-            # Generate barcode directly into BytesIO — no temp files needed
+            def get_font(size):
+                try:
+                    return ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", size)
+                except (OSError, IOError):
+                    try:
+                        return ImageFont.truetype(
+                            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", size
+                        )
+                    except (OSError, IOError):
+                        return ImageFont.load_default()
+
+            # Generate barcode directly into BytesIO — no temp files needed.
+            # font_size: 0 suppresses python-barcode's own human-readable text;
+            # we draw that ourselves below since stretching the barcode image
+            # to fill the label width would otherwise distort its baked-in text.
             code128 = barcode.get('code128', item.barcode, writer=ImageWriter())
             barcode_options = {
                 'module_width': 0.3,
                 'module_height': 8,
-                'font_size': 8,
-                'text_distance': 2,
+                'font_size': 0,
                 'quiet_zone': 2,
             }
             barcode_buffer = BytesIO()
@@ -224,36 +237,40 @@ class ItemViewSet(viewsets.ModelViewSet):
             label = Image.new('RGB', (label_width, label_height), 'white')
             draw = ImageDraw.Draw(label)
 
-            # Try to use a system font, fall back to default
-            try:
-                font_large = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 34)
-                font_medium = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 26)
-                font_price = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 50)
-            except (OSError, IOError):
-                try:
-                    font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 34)
-                    font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 26)
-                    font_price = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 50)
-                except (OSError, IOError):
-                    font_large = ImageFont.load_default()
-                    font_medium = ImageFont.load_default()
-                    font_price = ImageFont.load_default()
+            max_text_width = label_width - 20
+
+            def fit_font(text, start_size, min_size):
+                """Shrink the font until `text` fits max_text_width, so long
+                brand/color/size combinations never run off the label edge."""
+                size = start_size
+                font = get_font(size)
+                while size > min_size and draw.textbbox((0, 0), text, font=font)[2] > max_text_width:
+                    size -= 2
+                    font = get_font(size)
+                return font
 
             # Stretch the barcode to span the full label width. Code128 stays
             # scannable under uniform scaling in either dimension, so we don't
             # need to preserve its native (wide-but-short) aspect ratio here.
             barcode_new_width = label_width - 40
-            barcode_new_height = 85
+            barcode_new_height = 72
             barcode_img = barcode_img.resize((barcode_new_width, barcode_new_height), Image.LANCZOS)
 
             # Paste barcode centered at top
             barcode_x = (label_width - barcode_new_width) // 2
-            label.paste(barcode_img, (barcode_x, 8))
+            label.paste(barcode_img, (barcode_x, 6))
 
-            # Text area below barcode
-            text_y = 8 + barcode_new_height + 20
+            # Human-readable barcode number, centered under the bars
+            font_id = get_font(16)
+            id_bbox = draw.textbbox((0, 0), item.barcode, font=font_id)
+            id_x = (label_width - (id_bbox[2] - id_bbox[0])) // 2
+            id_y = 6 + barcode_new_height + 2
+            draw.text((id_x, id_y), item.barcode, fill='black', font=font_id)
+            text_y = draw.textbbox((id_x, id_y), item.barcode, font=font_id)[3] + 10
+
+            font_large = fit_font(item.category, 42, 22)
             draw.text((10, text_y), item.category, fill='black', font=font_large)
-            text_y = draw.textbbox((10, text_y), item.category, font=font_large)[3] + 14
+            text_y = draw.textbbox((10, text_y), item.category, font=font_large)[3] + 8
 
             desc_parts = []
             if item.brand:
@@ -264,13 +281,15 @@ class ItemViewSet(viewsets.ModelViewSet):
                 desc_parts.append(f"Gr. {item.size}")
             desc_text = "  |  ".join(desc_parts) if desc_parts else ""
             if desc_text:
+                font_medium = fit_font(desc_text, 30, 16)
                 draw.text((10, text_y), desc_text, fill='black', font=font_medium)
-                text_y = draw.textbbox((10, text_y), desc_text, font=font_medium)[3] + 14
+                text_y = draw.textbbox((10, text_y), desc_text, font=font_medium)[3] + 8
             else:
-                text_y += 14
+                text_y += 8
 
             # Price - right aligned
             price_text = f"{item.price} EUR"
+            font_price = fit_font(price_text, 56, 30)
             price_bbox = draw.textbbox((0, 0), price_text, font=font_price)
             price_width = price_bbox[2] - price_bbox[0]
             draw.text((label_width - price_width - 10, text_y), price_text, fill='black', font=font_price)
