@@ -226,14 +226,14 @@ class ItemViewSet(viewsets.ModelViewSet):
 
             # Try to use a system font, fall back to default
             try:
-                font_large = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 30)
-                font_medium = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 22)
-                font_price = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 42)
+                font_large = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 34)
+                font_medium = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 26)
+                font_price = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 50)
             except (OSError, IOError):
                 try:
-                    font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 30)
-                    font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 22)
-                    font_price = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 42)
+                    font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 34)
+                    font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 26)
+                    font_price = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 50)
                 except (OSError, IOError):
                     font_large = ImageFont.load_default()
                     font_medium = ImageFont.load_default()
@@ -243,7 +243,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             # scannable under uniform scaling in either dimension, so we don't
             # need to preserve its native (wide-but-short) aspect ratio here.
             barcode_new_width = label_width - 40
-            barcode_new_height = 95
+            barcode_new_height = 85
             barcode_img = barcode_img.resize((barcode_new_width, barcode_new_height), Image.LANCZOS)
 
             # Paste barcode centered at top
@@ -251,8 +251,9 @@ class ItemViewSet(viewsets.ModelViewSet):
             label.paste(barcode_img, (barcode_x, 8))
 
             # Text area below barcode
-            text_y = barcode_new_height + 16
+            text_y = 8 + barcode_new_height + 20
             draw.text((10, text_y), item.category, fill='black', font=font_large)
+            text_y = draw.textbbox((10, text_y), item.category, font=font_large)[3] + 14
 
             desc_parts = []
             if item.brand:
@@ -262,12 +263,13 @@ class ItemViewSet(viewsets.ModelViewSet):
             if item.size:
                 desc_parts.append(f"Gr. {item.size}")
             desc_text = "  |  ".join(desc_parts) if desc_parts else ""
-            text_y += 36
             if desc_text:
                 draw.text((10, text_y), desc_text, fill='black', font=font_medium)
+                text_y = draw.textbbox((10, text_y), desc_text, font=font_medium)[3] + 14
+            else:
+                text_y += 14
 
             # Price - right aligned
-            text_y += 30
             price_text = f"{item.price} EUR"
             price_bbox = draw.textbbox((0, 0), price_text, font=font_price)
             price_width = price_bbox[2] - price_bbox[0]
