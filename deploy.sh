@@ -27,6 +27,11 @@ fi
 
 # ── 2. Python-Umgebung ────────────────────────────────────────
 echo "→ [2/9] Python-Umgebung..."
+# Etiketten-Schrift: ohne installierte TrueType-Schrift faellt Pillow auf eine
+# feste ~8px-Bitmapschrift zurueck (ignoriert jede Schriftgroesse, Umlaute
+# werden zu Kaestchen). Schlaegt die Installation fehl, greift die mit
+# python-barcode ausgelieferte Schrift als Fallback.
+sudo apt-get install -y fonts-dejavu-core >/dev/null 2>&1 || true
 if [ ! -f "$VENV/bin/activate" ]; then
   echo "  venv erstellen..."
   python3 -m venv "$VENV"

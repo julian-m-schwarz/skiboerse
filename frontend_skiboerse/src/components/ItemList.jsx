@@ -76,22 +76,14 @@ function ItemList() {
               @page { size: 54mm 25mm; margin: 0; }
               * { margin: 0; padding: 0; }
               html, body { width: 54mm; }
-              .label-page {
-                width: 54mm;
-                height: 25mm;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                page-break-after: always;
-                break-after: page;
+              /* Break BEFORE each extra copy rather than after every copy: a
+                 trailing break, or a box exactly as tall as the page, makes the
+                 print engine emit an empty label between copies. */
+              .label-page + .label-page {
+                page-break-before: always;
+                break-before: page;
               }
-              .label-page:last-child { page-break-after: auto; break-after: auto; }
-              img {
-                max-width: 54mm;
-                max-height: 25mm;
-                object-fit: contain;
-                display: block;
-              }
+              img { width: 54mm; height: auto; display: block; }
             </style>
           </head>
           <body>

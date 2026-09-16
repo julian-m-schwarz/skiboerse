@@ -1,3 +1,5 @@
+import functools
+import os
 import subprocess
 import platform
 from rest_framework import viewsets, status
@@ -13,6 +15,26 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from .models import Seller, Item, Sale, UserProfile
 from .serializers import SellerSerializer, ItemSerializer, ItemBarcodeSerializer, SaleSerializer, UserWithRoleSerializer
+
+
+@functools.lru_cache(maxsize=1)
+def label_font_path():
+    """Resolve a TrueType font that actually exists on this machine.
+
+    Pi OS Lite ships no DejaVu package and obviously no macOS fonts, so
+    without an existing path Pillow falls back to a fixed ~8px bitmap font
+    that ignores the requested size and renders umlauts as boxes. The font
+    bundled with python-barcode is the guaranteed-present last resort.
+    """
+    import barcode
+
+    candidates = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+        os.path.join(os.path.dirname(barcode.__file__), "fonts", "DejaVuSansMono.ttf"),
+    ]
+    return next((path for path in candidates if os.path.exists(path)), None)
 
 
 def is_admin(user):
@@ -203,19 +225,19 @@ class ItemViewSet(viewsets.ModelViewSet):
             from barcode.writer import ImageWriter
             from PIL import Image, ImageDraw, ImageFont
 
-            label_width = 500
-            label_height = 250
+            # 54 x 25 mm printable area of the Dymo Mehrzweck label at 300 dpi.
+            # Matching that aspect exactly means the image fills the label
+            # instead of being letterboxed down to a smaller print size.
+            label_width = 638
+            label_height = 295
+            margin = 14
+
+            font_path = label_font_path()
 
             def get_font(size):
-                try:
-                    return ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", size)
-                except (OSError, IOError):
-                    try:
-                        return ImageFont.truetype(
-                            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", size
-                        )
-                    except (OSError, IOError):
-                        return ImageFont.load_default()
+                if font_path:
+                    return ImageFont.truetype(font_path, size)
+                return ImageFont.load_default()
 
             # Generate barcode directly into BytesIO — no temp files needed.
             # font_size: 0 suppresses python-barcode's own human-readable text;
@@ -226,7 +248,7 @@ class ItemViewSet(viewsets.ModelViewSet):
                 'module_width': 0.3,
                 'module_height': 8,
                 'font_size': 0,
-                'quiet_zone': 2,
+                'quiet_zone': 1,
             }
             barcode_buffer = BytesIO()
             code128.write(barcode_buffer, options=barcode_options)
@@ -237,7 +259,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             label = Image.new('RGB', (label_width, label_height), 'white')
             draw = ImageDraw.Draw(label)
 
-            max_text_width = label_width - 20
+            max_text_width = label_width - 2 * margin
 
             def fit_font(text, start_size, min_size):
                 """Shrink the font until `text` fits max_text_width, so long
@@ -252,25 +274,22 @@ class ItemViewSet(viewsets.ModelViewSet):
             # Stretch the barcode to span the full label width. Code128 stays
             # scannable under uniform scaling in either dimension, so we don't
             # need to preserve its native (wide-but-short) aspect ratio here.
-            barcode_new_width = label_width - 40
-            barcode_new_height = 72
+            barcode_new_width = max_text_width
+            barcode_new_height = 80
             barcode_img = barcode_img.resize((barcode_new_width, barcode_new_height), Image.LANCZOS)
-
-            # Paste barcode centered at top
-            barcode_x = (label_width - barcode_new_width) // 2
-            label.paste(barcode_img, (barcode_x, 6))
+            label.paste(barcode_img, (margin, 6))
 
             # Human-readable barcode number, centered under the bars
-            font_id = get_font(16)
+            font_id = get_font(20)
             id_bbox = draw.textbbox((0, 0), item.barcode, font=font_id)
             id_x = (label_width - (id_bbox[2] - id_bbox[0])) // 2
             id_y = 6 + barcode_new_height + 2
             draw.text((id_x, id_y), item.barcode, fill='black', font=font_id)
-            text_y = draw.textbbox((id_x, id_y), item.barcode, font=font_id)[3] + 10
+            text_y = draw.textbbox((id_x, id_y), item.barcode, font=font_id)[3] + 12
 
-            font_large = fit_font(item.category, 42, 22)
-            draw.text((10, text_y), item.category, fill='black', font=font_large)
-            text_y = draw.textbbox((10, text_y), item.category, font=font_large)[3] + 8
+            font_large = fit_font(item.category, 54, 28)
+            draw.text((margin, text_y), item.category, fill='black', font=font_large)
+            text_y = draw.textbbox((margin, text_y), item.category, font=font_large)[3] + 8
 
             desc_parts = []
             if item.brand:
@@ -279,20 +298,20 @@ class ItemViewSet(viewsets.ModelViewSet):
                 desc_parts.append(item.color)
             if item.size:
                 desc_parts.append(f"Gr. {item.size}")
-            desc_text = "  |  ".join(desc_parts) if desc_parts else ""
+            desc_text = " | ".join(desc_parts) if desc_parts else ""
             if desc_text:
-                font_medium = fit_font(desc_text, 30, 16)
-                draw.text((10, text_y), desc_text, fill='black', font=font_medium)
-                text_y = draw.textbbox((10, text_y), desc_text, font=font_medium)[3] + 8
+                font_medium = fit_font(desc_text, 34, 18)
+                draw.text((margin, text_y), desc_text, fill='black', font=font_medium)
+                text_y = draw.textbbox((margin, text_y), desc_text, font=font_medium)[3] + 8
             else:
                 text_y += 8
 
             # Price - right aligned
             price_text = f"{item.price} EUR"
-            font_price = fit_font(price_text, 56, 30)
+            font_price = fit_font(price_text, 66, 34)
             price_bbox = draw.textbbox((0, 0), price_text, font=font_price)
             price_width = price_bbox[2] - price_bbox[0]
-            draw.text((label_width - price_width - 10, text_y), price_text, fill='black', font=font_price)
+            draw.text((label_width - price_width - margin, text_y), price_text, fill='black', font=font_price)
 
             # Convert to base64
             buffer = BytesIO()
