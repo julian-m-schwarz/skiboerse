@@ -135,8 +135,12 @@ function SellerItemsView() {
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className={item.is_sold ? 'sold-row' : ''}>
+              {items.map((item) => {
+                // A sold or picked-up article is done: it must not be edited
+                // and a fresh label for it would be meaningless.
+                const isLocked = Boolean(item.is_sold || item.picked_up_at);
+                return (
+                <tr key={item.id} className={isLocked ? 'sold-row' : ''}>
                   <td className="barcode-cell">{item.barcode}</td>
                   <td>{item.category}</td>
                   <td>{item.brand || '-'}</td>
@@ -144,9 +148,18 @@ function SellerItemsView() {
                   <td>{item.size || '-'}</td>
                   <td className="price-cell">{item.price} €</td>
                   <td>
-                    <span className={`status-badge ${item.is_sold ? 'status-sold' : 'status-available'}`}>
-                      {item.is_sold ? 'Verkauft' : 'Verfügbar'}
-                    </span>
+                    {item.is_sold ? (
+                      <span className="status-badge status-sold">Verkauft</span>
+                    ) : item.picked_up_at ? (
+                      <span className="status-badge status-picked-up">
+                        Abgeholt
+                        <span className="returned-timestamp">
+                          {new Date(item.picked_up_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="status-badge status-available">Verfügbar</span>
+                    )}
                     {item.returned_at && (
                       <span className="status-returned">
                         Rückgemeldet
@@ -160,19 +173,26 @@ function SellerItemsView() {
                     <button
                       onClick={() => printLabel(item.id)}
                       className="btn btn-primary btn-small"
-                      disabled={printingId === item.id}
+                      disabled={isLocked || printingId === item.id}
                     >
                       {printingId === item.id ? 'Druckt…' : 'Label drucken'}
                     </button>
-                    <Link
-                      to={`/inventory/items/${item.id}/edit`}
-                      className="btn btn-secondary btn-small"
-                    >
-                      Bearbeiten
-                    </Link>
+                    {isLocked ? (
+                      <button className="btn btn-secondary btn-small" disabled>
+                        Bearbeiten
+                      </button>
+                    ) : (
+                      <Link
+                        to={`/inventory/items/${item.id}/edit`}
+                        className="btn btn-secondary btn-small"
+                      >
+                        Bearbeiten
+                      </Link>
+                    )}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
           <div className="items-summary">

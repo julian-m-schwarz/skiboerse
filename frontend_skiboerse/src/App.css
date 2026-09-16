@@ -240,6 +240,14 @@ body {
   box-shadow: 0 4px 15px rgba(78, 189, 196, 0.2);
 }
 
+.btn:disabled,
+.btn:disabled:hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .btn-primary {
   background: var(--color-teal);
   color: var(--color-snow);

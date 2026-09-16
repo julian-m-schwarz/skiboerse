@@ -110,8 +110,12 @@ function ItemList() {
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className={item.is_sold || item.picked_up_at ? 'sold-row' : ''}>
+              {items.map((item) => {
+                // A sold or picked-up article is done: it must not be edited
+                // and a fresh label for it would be meaningless.
+                const isLocked = Boolean(item.is_sold || item.picked_up_at);
+                return (
+                <tr key={item.id} className={isLocked ? 'sold-row' : ''}>
                   <td className="barcode-cell">{item.barcode}</td>
                   <td>{item.category}</td>
                   <td>{item.brand || '-'}</td>
@@ -161,16 +165,22 @@ function ItemList() {
                     <button
                       onClick={() => printLabel(item.id)}
                       className="btn btn-primary btn-small"
-                      disabled={printingId === item.id}
+                      disabled={isLocked || printingId === item.id}
                     >
                       {printingId === item.id ? 'Druckt...' : 'Label drucken'}
                     </button>
-                    <Link
-                      to={`/inventory/items/${item.id}/edit`}
-                      className="btn btn-secondary btn-small"
-                    >
-                      Bearbeiten
-                    </Link>
+                    {isLocked ? (
+                      <button className="btn btn-secondary btn-small" disabled>
+                        Bearbeiten
+                      </button>
+                    ) : (
+                      <Link
+                        to={`/inventory/items/${item.id}/edit`}
+                        className="btn btn-secondary btn-small"
+                      >
+                        Bearbeiten
+                      </Link>
+                    )}
                     {isAdmin && (
                       <button
                         onClick={() => deleteItem(item.id)}
@@ -181,7 +191,8 @@ function ItemList() {
                     )}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
