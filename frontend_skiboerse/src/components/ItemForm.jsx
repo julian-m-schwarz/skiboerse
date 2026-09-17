@@ -273,6 +273,17 @@ function ItemForm() {
     return isNaN(num) ? '' : num.toFixed(2);
   };
 
+  // A major seller's items are entered before the goods arrive, so there is
+  // nothing to label yet - those get their label once they are accepted.
+  const printLabelIfAccepted = async (createdItem) => {
+    if (!createdItem.accepted_at) {
+      setPrintStatus('pending');
+      setTimeout(() => setPrintStatus(null), 4000);
+      return;
+    }
+    await printLabel(createdItem.id);
+  };
+
   const printLabel = async (itemId) => {
     try {
       setPrintStatus('printing');
@@ -314,7 +325,7 @@ function ItemForm() {
 
       // Print labels for newly created items
       if (!isEditMode && createdItem.id) {
-        printLabel(createdItem.id);
+        printLabelIfAccepted(createdItem);
       }
 
       if (!isEditMode && currentSeller) {
@@ -389,7 +400,7 @@ function ItemForm() {
 
       const createdItem = await response.json();
       if (createdItem.id) {
-        printLabel(createdItem.id);
+        printLabelIfAccepted(createdItem);
       }
 
       setAddedCount(prev => prev + 1);
@@ -464,6 +475,12 @@ function ItemForm() {
 
       {printStatus === 'printing' && (
         <div className="info">Etiketten werden gedruckt...</div>
+      )}
+      {printStatus === 'pending' && (
+        <div className="info">
+          Kein Etikett gedruckt — Artikel ist noch nicht angenommen.
+          Das Etikett kann nach der Annahme in der Artikelliste gedruckt werden.
+        </div>
       )}
       {printStatus === 'success' && (
         <div className="success">2 Etiketten gedruckt</div>

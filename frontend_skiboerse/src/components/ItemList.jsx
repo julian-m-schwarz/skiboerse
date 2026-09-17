@@ -243,7 +243,8 @@ function ItemList() {
                     <button
                       onClick={() => printLabel(item.id)}
                       className="btn btn-primary btn-small"
-                      disabled={isLocked || printingId === item.id}
+                      disabled={isLocked || isPending || printingId === item.id}
+                      title={isPending ? 'Artikel wurde noch nicht angenommen' : undefined}
                     >
                       {printingId === item.id ? 'Druckt...' : 'Label drucken'}
                     </button>

@@ -223,6 +223,12 @@ class ItemViewSet(viewsets.ModelViewSet):
 
         item = self.get_object()
 
+        if not item.is_accepted:
+            return Response({
+                'success': False,
+                'error': 'Artikel wurde noch nicht angenommen'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             import barcode
             from barcode.writer import ImageWriter
