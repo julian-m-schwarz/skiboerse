@@ -156,6 +156,9 @@ function ReturnCheck() {
       if (!response.ok) {
         setError(data.error || 'Artikel nicht gefunden');
         setFoundItem(null);
+      } else if (!data.accepted_at) {
+        setError('Artikel wurde nie angenommen und kann nicht zurückgemeldet werden');
+        setFoundItem(null);
       } else {
         setFoundItem(data);
       }

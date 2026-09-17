@@ -87,7 +87,7 @@ class SellerViewSet(viewsets.ModelViewSet):
         }
 
         # Load all items once, filter in Python to avoid extra DB queries
-        all_items = list(seller.items.select_related('seller').all())
+        all_items = [i for i in seller.items.select_related('seller').all() if i.accepted_at]
         sold_items = [i for i in all_items if i.is_sold]
         unsold_returned = [i for i in all_items if not i.is_sold and i.returned_at]
         stolen_items = [i for i in all_items if i.is_stolen and not i.is_sold]
@@ -109,7 +109,9 @@ class SellerViewSet(viewsets.ModelViewSet):
         """
         seller = self.get_object()
         now = timezone.now()
-        updated = seller.items.filter(is_sold=False, returned_at__isnull=True, is_stolen=False).update(returned_at=now)
+        updated = seller.items.accepted().filter(
+            is_sold=False, returned_at__isnull=True, is_stolen=False
+        ).update(returned_at=now)
         return Response({'success': True, 'returned_count': updated})
 
     @action(detail=True, methods=['post'])
@@ -122,16 +124,19 @@ class SellerViewSet(viewsets.ModelViewSet):
         seller = self.get_object()
 
         # Check if all items are sold, returned, or marked as stolen
-        pending_items = seller.items.filter(is_sold=False, returned_at__isnull=True, is_stolen=False)
+        pending_items = seller.items.accepted().filter(
+            is_sold=False, returned_at__isnull=True, is_stolen=False
+        )
         if pending_items.count() > 0:
             return Response(
                 {'error': 'Nicht alle Artikel wurden zurückgemeldet', 'pending_count': pending_items.count()},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Mark all items as picked up
+        # Mark all items as picked up. Never-delivered items are left alone -
+        # they cannot be handed back to a seller who never brought them.
         now = timezone.now()
-        updated_count = seller.items.filter(picked_up_at__isnull=True).update(picked_up_at=now)
+        updated_count = seller.items.accepted().filter(picked_up_at__isnull=True).update(picked_up_at=now)
 
         return Response({'success': True, 'updated': updated_count})
 
@@ -151,7 +156,7 @@ class ItemViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def pending(self, request):
         """List all items that are not sold and not returned."""
-        items = Item.objects.filter(
+        items = Item.objects.accepted().filter(
             is_sold=False, returned_at__isnull=True
         ).select_related('seller').order_by('seller__seller_number', 'barcode')
 
@@ -187,7 +192,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             data = serializer.data
 
             # Check if all seller's items are sold or returned
-            pending = Item.objects.filter(
+            pending = Item.objects.accepted().filter(
                 seller=item.seller, is_sold=False, returned_at__isnull=True
             ).count()
             data['seller_all_done'] = pending == 0
@@ -202,7 +207,7 @@ class ItemViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def available(self, request):
         """Get unsold items: /api/items/available/"""
-        items = Item.objects.filter(is_sold=False)
+        items = Item.objects.accepted().filter(is_sold=False)
         serializer = self.get_serializer(items, many=True)
         return Response(serializer.data)
 
@@ -387,12 +392,18 @@ class ItemViewSet(viewsets.ModelViewSet):
                     'item': ItemSerializer(item).data
                 }, status=status.HTTP_400_BAD_REQUEST)
 
+            if not item.is_accepted:
+                return Response({
+                    'error': 'Artikel wurde nie angenommen und kann nicht zurückgemeldet werden',
+                    'item': ItemSerializer(item).data
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             was_already_returned = item.returned_at is not None
             item.returned_at = timezone.now()
             item.save()
 
             # Check if all seller's items are sold or returned
-            pending = Item.objects.filter(
+            pending = Item.objects.accepted().filter(
                 seller=item.seller, is_sold=False, returned_at__isnull=True
             ).count()
 

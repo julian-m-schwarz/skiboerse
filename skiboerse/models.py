@@ -96,6 +96,10 @@ class Seller(models.Model):
         else:
             super().save(*args, **kwargs)
 
+    def accepted_items(self):
+        """Handed-in items, filtered in Python to reuse the prefetch cache."""
+        return [item for item in self.items.all() if item.accepted_at]
+
     def calculate_acceptance_fee(self):
         """
         Calculate acceptance fee based on item count and membership status.
@@ -108,7 +112,7 @@ class Seller(models.Model):
         if self.is_major_seller or self.is_member:
             return 0
 
-        item_count = len(self.items.all())
+        item_count = len(self.accepted_items())
         if item_count < 20:
             return 5.00
         else:
@@ -120,7 +124,7 @@ class Seller(models.Model):
         Returns dict with breakdown of calculation.
         Uses len() / list comprehensions so prefetched items cache is reused.
         """
-        all_items = list(self.items.all())
+        all_items = self.accepted_items()
         sold_items = [item for item in all_items if item.is_sold]
         stolen_items = [item for item in all_items if item.is_stolen and not item.is_sold]
 
@@ -159,6 +163,17 @@ class Seller(models.Model):
     class Meta:
         app_label = "skiboerse"
         ordering = ["-created_at"]  # Newest first
+
+
+class ItemQuerySet(models.QuerySet):
+    def accepted(self):
+        """Items that were actually handed in.
+
+        Anything still pending was entered ahead of the event and never
+        delivered, so it is not missing and cannot be returned or picked up -
+        it must stay out of the return and payout process entirely.
+        """
+        return self.filter(accepted_at__isnull=False)
 
 
 class Item(models.Model):
@@ -201,6 +216,8 @@ class Item(models.Model):
     picked_up_at = models.DateTimeField(null=True, blank=True, db_index=True)
     accepted_at = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = ItemQuerySet.as_manager()
 
     def __str__(self):
         return f"{self.barcode} - {self.category} - ${self.price}"
