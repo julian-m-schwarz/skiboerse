@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation, Link } from 'react-router-dom';
-import DeviceStatus from './DeviceStatus';
 import { apiFetch } from '../api';
 import { printItemLabel } from '../printLabel';
 
@@ -452,7 +451,6 @@ function ItemForm() {
           <h2 className="page-title">
             {isEditMode ? 'Artikel bearbeiten' : 'Artikel erfassen'}
           </h2>
-          <DeviceStatus deviceType="printer" label="Etikettendrucker" />
         </div>
       </div>
 

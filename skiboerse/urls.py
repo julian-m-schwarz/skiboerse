@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    SellerViewSet, ItemViewSet, SaleViewSet, device_status,
+    SellerViewSet, ItemViewSet, SaleViewSet,
     login_view, logout_view, session_view,
     user_list, user_create, user_detail, user_change_password,
     return_check_status, return_check_toggle, analytics, price_histogram,
@@ -23,7 +23,6 @@ urlpatterns = [
     path("api/users/<int:pk>/", user_detail, name="user-detail"),
     path("api/users/<int:pk>/change-password/", user_change_password, name="user-change-password"),
     path("api/", include(router.urls)),
-    path("api/devices/status/", device_status, name="device-status"),
     path("api/return-check/status/", return_check_status, name="return-check-status"),
     path("api/return-check/toggle/", return_check_toggle, name="return-check-toggle"),
     path("api/analytics/", analytics, name="analytics"),

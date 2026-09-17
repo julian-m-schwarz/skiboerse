@@ -1,7 +1,5 @@
 import functools
 import os
-import subprocess
-import platform
 from rest_framework import viewsets, status
 from django.db import transaction
 from rest_framework.decorators import api_view, action, permission_classes
@@ -434,85 +432,6 @@ class SaleViewSet(viewsets.ModelViewSet):
                 sale.items.update(is_sold=True, sold_at=timezone.now(), returned_at=None)
 
         return response
-
-
-@api_view(['GET'])
-def device_status(request):
-    """
-    Check connected USB devices for barcode scanner and label printer.
-    GET /api/devices/status/
-    Returns: {"scanner": true/false, "printer": true/false, "devices": [...]}
-    Result is cached for 15 seconds to avoid repeated subprocess calls on the Pi.
-    """
-    from django.core.cache import cache
-
-    cache_key = 'device_status_result'
-    cached = cache.get(cache_key)
-    if cached is not None:
-        return Response(cached)
-
-    scanner_connected = False
-    printer_connected = False
-    detected_devices = []
-
-    scanner_keywords = ['scanner', 'barcode', 'symbol', 'honeywell', 'zebex',
-                        'datalogic', 'opticon', 'metrologic', 'hid']
-    printer_keywords = ['printer', 'label', 'zebra', 'dymo', 'brother',
-                        'tsc', 'bixolon', 'citizen', 'epson']
-
-    try:
-        system = platform.system()
-        if system == 'Darwin':
-            result = subprocess.run(
-                ['system_profiler', 'SPUSBDataType', '-detailLevel', 'mini'],
-                capture_output=True, text=True, timeout=5
-            )
-            usb_output = result.stdout.lower()
-            for line in result.stdout.split('\n'):
-                line_stripped = line.strip()
-                if line_stripped and ':' not in line_stripped and line_stripped not in ('', 'USB:'):
-                    detected_devices.append(line_stripped)
-
-            for keyword in scanner_keywords:
-                if keyword in usb_output:
-                    scanner_connected = True
-                    break
-
-            for keyword in printer_keywords:
-                if keyword in usb_output:
-                    printer_connected = True
-                    break
-
-        elif system == 'Linux':
-            result = subprocess.run(
-                ['lsusb'], capture_output=True, text=True, timeout=5
-            )
-            usb_output = result.stdout.lower()
-            for line in result.stdout.strip().split('\n'):
-                if line.strip():
-                    detected_devices.append(line.strip())
-
-            for keyword in scanner_keywords:
-                if keyword in usb_output:
-                    scanner_connected = True
-                    break
-
-            for keyword in printer_keywords:
-                if keyword in usb_output:
-                    printer_connected = True
-                    break
-
-    except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
-        pass
-
-    result_data = {
-        'scanner': scanner_connected,
-        'printer': printer_connected,
-        'devices': detected_devices
-    }
-    cache.set(cache_key, result_data, 15)
-
-    return Response(result_data)
 
 
 @api_view(['POST'])
