@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '../api';
 
-const DeviceStatus = forwardRef(({ deviceType, label }, ref) => {
+function DeviceStatus({ deviceType, label }) {
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const intervalRef = useRef(null);
@@ -19,10 +19,6 @@ const DeviceStatus = forwardRef(({ deviceType, label }, ref) => {
       setLoading(false);
     }
   };
-
-  useImperativeHandle(ref, () => ({
-    refresh: checkDeviceStatus,
-  }));
 
   useEffect(() => {
     checkDeviceStatus();
@@ -60,6 +56,6 @@ const DeviceStatus = forwardRef(({ deviceType, label }, ref) => {
       </span>
     </div>
   );
-});
+}
 
 export default DeviceStatus;

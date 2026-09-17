@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import DeviceStatus from './DeviceStatus';
 import './Checkout.css';
 import { apiFetch } from '../api';
 
@@ -13,7 +12,6 @@ function Checkout() {
   const [showConfirmPopup, setShowConfirmPopup] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const inputRef = useRef(null);
-  const scannerStatusRef = useRef(null);
 
   useEffect(() => {
     // Auto-focus barcode input
@@ -127,7 +125,6 @@ function Checkout() {
       <div className="page-header">
         <div className="page-header-left">
           <h2 className="page-title">Verkaufsmaske</h2>
-          <DeviceStatus ref={scannerStatusRef} deviceType="scanner" label="Barcode-Scanner" />
         </div>
         <Link to="/" className="btn btn-secondary">
           ← Zurück
@@ -153,7 +150,6 @@ function Checkout() {
                 className="form-input barcode-input"
                 placeholder="001-001"
                 disabled={loading}
-                onFocus={() => scannerStatusRef.current?.refresh()}
               />
               <button type="submit" className="btn btn-primary" disabled={loading}>
                 Hinzufügen
