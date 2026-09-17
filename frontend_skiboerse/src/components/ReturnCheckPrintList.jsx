@@ -32,7 +32,9 @@ function ReturnCheckPrintList() {
     const res = await apiFetch(`/api/items/?seller=${seller.id}`);
     if (!res.ok) throw new Error(`Fehler beim Laden der Artikel für Verkäufer #${seller.seller_number}`);
     const items = await res.json();
-    return items.slice().sort((a, b) => {
+    // Items that were entered ahead of the event but never handed in are not
+    // physically there, so there is nothing to check off for them.
+    return items.filter(item => item.accepted_at).sort((a, b) => {
       const aNum = parseInt(a.barcode.split('-')[1]) || 0;
       const bNum = parseInt(b.barcode.split('-')[1]) || 0;
       return aNum - bNum;
@@ -56,6 +58,10 @@ function ReturnCheckPrintList() {
     setError(null);
     try {
       const items = await fetchItemsForSeller(seller);
+      if (items.length === 0) {
+        setError(`Verkäufer #${seller.seller_number} hat keine angenommenen Artikel — nichts zu drucken.`);
+        return;
+      }
       triggerPrint({ pages: [{ seller, items }] }, () => {
         setPrintedIds(prev => new Set([...prev, seller.id]));
       });
@@ -70,14 +76,20 @@ function ReturnCheckPrintList() {
     setPrintAllLoading(true);
     setError(null);
     try {
-      const pages = await Promise.all(
+      const allPages = await Promise.all(
         sellers.map(async (seller) => {
           const items = await fetchItemsForSeller(seller);
           return { seller, items };
         })
       );
+      // Skip sellers with nothing to check off rather than emitting a blank sheet.
+      const pages = allPages.filter(page => page.items.length > 0);
+      if (pages.length === 0) {
+        setError('Keine angenommenen Artikel vorhanden — nichts zu drucken.');
+        return;
+      }
       triggerPrint({ pages }, () => {
-        setPrintedIds(new Set(sellers.map(s => s.id)));
+        setPrintedIds(new Set(pages.map(page => page.seller.id)));
       });
     } catch (err) {
       setError(err.message);
