@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { apiFetch } from '../api';
 import { printItemLabel } from '../printLabel';
+import useMajorAcceptance from '../hooks/useMajorAcceptance';
 
 function SellerItemsView() {
   const { id } = useParams();
@@ -12,6 +13,7 @@ function SellerItemsView() {
   const [feeUpdating, setFeeUpdating] = useState(false);
   const [printingId, setPrintingId] = useState(null);
   const [acceptingAll, setAcceptingAll] = useState(false);
+  const { open: acceptanceOpen } = useMajorAcceptance();
 
   useEffect(() => {
     fetchSellerAndItems();
@@ -123,7 +125,7 @@ function SellerItemsView() {
             <Link to={`/inventory/sellers/${id}/edit`} className="btn btn-secondary" style={{marginLeft: '0.5rem'}}>
               Verkäufer bearbeiten
             </Link>
-            {pendingItemIds.length > 0 && (
+            {pendingItemIds.length > 0 && acceptanceOpen && (
               <button
                 onClick={() => acceptItems(pendingItemIds)}
                 className="btn btn-success"
@@ -204,7 +206,7 @@ function SellerItemsView() {
                     )}
                   </td>
                   <td className="actions-cell">
-                    {isPending && (
+                    {isPending && acceptanceOpen && (
                       <button
                         onClick={() => acceptItems([item.id])}
                         className="btn btn-success btn-small"

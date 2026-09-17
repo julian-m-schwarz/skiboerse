@@ -3,6 +3,50 @@ import { Link } from 'react-router-dom';
 import { apiFetch } from '../api';
 import { printItemLabel } from '../printLabel';
 import { useAuth } from '../AuthContext';
+import useMajorAcceptance from '../hooks/useMajorAcceptance';
+
+function MajorAcceptanceToggle({ open, onChange }) {
+  const [toggling, setToggling] = useState(false);
+
+  const handleToggle = async () => {
+    if (open && !window.confirm(
+      'Annahme abschließen? Danach kann niemand mehr Artikel als angenommen markieren.'
+    )) return;
+
+    setToggling(true);
+    try {
+      const res = await apiFetch('/api/major-acceptance/toggle/', { method: 'POST' });
+      if (!res.ok) throw new Error('Keine Berechtigung');
+      const data = await res.json();
+      onChange(data.open);
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    } finally {
+      setToggling(false);
+    }
+  };
+
+  return (
+    <div className="landing-return-check-control">
+      <div className="return-check-control-inner">
+        <div className="return-check-control-label">
+          <span className={`return-check-dot ${open ? 'open' : 'closed'}`} />
+          <span>Artikelannahme Großverkäufer</span>
+          <span className="return-check-status-text">
+            {open ? 'Offen' : 'Abgeschlossen'}
+          </span>
+        </div>
+        <button
+          className={`btn ${open ? 'btn-danger' : 'btn-primary'}`}
+          onClick={handleToggle}
+          disabled={toggling}
+        >
+          {toggling ? '...' : open ? 'Alle Großverkäufer angenommen' : 'Annahme wieder öffnen'}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function ItemList() {
   const [items, setItems] = useState([]);
@@ -12,6 +56,7 @@ function ItemList() {
   const [acceptingId, setAcceptingId] = useState(null);
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const { open: acceptanceOpen, setOpen: setAcceptanceOpen } = useMajorAcceptance();
 
   useEffect(() => {
     fetchItems();
@@ -100,6 +145,10 @@ function ItemList() {
         </div>
       </div>
 
+      {isAdmin && (
+        <MajorAcceptanceToggle open={acceptanceOpen} onChange={setAcceptanceOpen} />
+      )}
+
       {error && <div className="error">Fehler: {error}</div>}
 
       {items.length === 0 ? (
@@ -182,7 +231,7 @@ function ItemList() {
                     )}
                   </td>
                   <td className="actions-cell">
-                    {isPending && (
+                    {isPending && acceptanceOpen && (
                       <button
                         onClick={() => acceptItems([item.id])}
                         className="btn btn-success btn-small"

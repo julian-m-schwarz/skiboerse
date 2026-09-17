@@ -341,6 +341,16 @@ class ItemViewSet(viewsets.ModelViewSet):
         Body: {"items": [1, 2, 3]}
         Serves both the per-row button and the bulk action for a seller.
         """
+        from django.core.cache import cache
+
+        # Enforced here too, so a page left open before the admin closed
+        # acceptance cannot still push items through.
+        if not cache.get('major_acceptance_open', True):
+            return Response(
+                {'error': 'Die Annahme wurde bereits abgeschlossen'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         item_ids = request.data.get('items', [])
         if not item_ids:
             return Response(
@@ -610,6 +620,25 @@ def return_check_status(request):
     from django.core.cache import cache
     is_open = cache.get('return_check_open', False)
     return Response({'open': is_open})
+
+
+@api_view(['GET'])
+def major_acceptance_status(request):
+    """GET /api/major-acceptance/status/ — whether items can still be accepted."""
+    from django.core.cache import cache
+    return Response({'open': cache.get('major_acceptance_open', True)})
+
+
+@api_view(['POST'])
+def major_acceptance_toggle(request):
+    """POST /api/major-acceptance/toggle/ — admin closes or reopens acceptance."""
+    if not is_admin(request.user):
+        return Response({'error': 'Keine Berechtigung'}, status=status.HTTP_403_FORBIDDEN)
+
+    from django.core.cache import cache
+    new_state = not cache.get('major_acceptance_open', True)
+    cache.set('major_acceptance_open', new_state, timeout=None)
+    return Response({'open': new_state})
 
 
 @api_view(['POST'])

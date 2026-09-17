@@ -5,6 +5,7 @@ from .views import (
     login_view, logout_view, session_view,
     user_list, user_create, user_detail, user_change_password,
     return_check_status, return_check_toggle, analytics, price_histogram,
+    major_acceptance_status, major_acceptance_toggle,
 )
 
 # Create a router and register our viewsets
@@ -25,6 +26,8 @@ urlpatterns = [
     path("api/", include(router.urls)),
     path("api/return-check/status/", return_check_status, name="return-check-status"),
     path("api/return-check/toggle/", return_check_toggle, name="return-check-toggle"),
+    path("api/major-acceptance/status/", major_acceptance_status, name="major-acceptance-status"),
+    path("api/major-acceptance/toggle/", major_acceptance_toggle, name="major-acceptance-toggle"),
     path("api/analytics/", analytics, name="analytics"),
     path("api/analytics/price-histogram/", price_histogram, name="price-histogram"),
 ]
