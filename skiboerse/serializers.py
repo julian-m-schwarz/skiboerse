@@ -102,6 +102,18 @@ class SellerSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["created_at", "full_name", "seller_number", "item_count", "acceptance_fee"]
 
+    def validate_is_major_seller(self, value):
+        # Report the exhausted number range as a 400 instead of letting the
+        # model's ValidationError surface as a server error.
+        creating_major = value and self.instance is None
+        if creating_major and Seller.next_major_seller_number() is None:
+            raise serializers.ValidationError(
+                f"Alle Großverkäufer-Nummern "
+                f"({Seller.MAJOR_SELLER_NUMBERS.start}-{Seller.MAJOR_SELLER_NUMBERS.stop - 1}) "
+                f"sind bereits vergeben."
+            )
+        return value
+
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}"
 

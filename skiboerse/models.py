@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
@@ -48,33 +49,49 @@ class Seller(models.Model):
     is_major_seller = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    MAJOR_SELLER_START_NUMBER = 999
+    # Numbers 1-10 are reserved for Großverkäufer, everyone else starts above.
+    MAJOR_SELLER_NUMBERS = range(1, 11)
+    REGULAR_SELLER_START_NUMBER = 11
+
+    @classmethod
+    def next_major_seller_number(cls):
+        """Lowest free number in the Großverkäufer range, or None if full.
+
+        Checks every seller rather than only major ones so numbers handed out
+        under the previous scheme cannot collide with a new assignment.
+        """
+        taken = set(
+            cls.objects.filter(seller_number__in=cls.MAJOR_SELLER_NUMBERS)
+            .values_list("seller_number", flat=True)
+        )
+        return next((n for n in cls.MAJOR_SELLER_NUMBERS if n not in taken), None)
 
     def save(self, *args, **kwargs):
         if not self.seller_number:
             with transaction.atomic():
                 if self.is_major_seller:
-                    latest_major_seller = (
-                        Seller.objects.select_for_update()
-                        .filter(is_major_seller=True)
-                        .order_by("seller_number")
-                        .first()
-                    )
-                    if latest_major_seller and latest_major_seller.seller_number:
-                        self.seller_number = latest_major_seller.seller_number - 1
-                    else:
-                        self.seller_number = self.MAJOR_SELLER_START_NUMBER
+                    number = self.next_major_seller_number()
+                    if number is None:
+                        raise ValidationError(
+                            f"Alle Großverkäufer-Nummern "
+                            f"({self.MAJOR_SELLER_NUMBERS.start}-{self.MAJOR_SELLER_NUMBERS.stop - 1}) "
+                            f"sind bereits vergeben."
+                        )
+                    self.seller_number = number
                 else:
                     latest_seller = (
                         Seller.objects.select_for_update()
-                        .filter(is_major_seller=False)
+                        .filter(
+                            is_major_seller=False,
+                            seller_number__gte=self.REGULAR_SELLER_START_NUMBER,
+                        )
                         .order_by("-seller_number")
                         .first()
                     )
-                    if latest_seller and latest_seller.seller_number:
+                    if latest_seller:
                         self.seller_number = latest_seller.seller_number + 1
                     else:
-                        self.seller_number = 1
+                        self.seller_number = self.REGULAR_SELLER_START_NUMBER
                 super().save(*args, **kwargs)
         else:
             super().save(*args, **kwargs)
