@@ -1041,6 +1041,36 @@ body {
   font-size: 0.95rem;
 }
 
+/* Keep the article number in view while scrolling the table sideways. A
+   sticky cell is transparent by default, so it needs a background of its own
+   or the columns passing underneath show through - and that background has to
+   follow the row states below, otherwise the pinned column stops matching its
+   own row on hover and for finished articles. */
+.inventory-table th:first-child,
+.inventory-table td:first-child {
+  position: sticky;
+  left: 0;
+}
+
+.inventory-table td:first-child {
+  z-index: 1;
+  background: var(--color-snow);
+  box-shadow: inset -1px 0 0 var(--color-glacier);
+}
+
+.inventory-table tbody tr:hover td:first-child {
+  background: var(--color-ice);
+}
+
+.inventory-table tbody tr.sold-row td:first-child {
+  background: #f5f5f5;
+}
+
+.inventory-table th:first-child {
+  z-index: 2;
+  background: var(--color-mountain);
+}
+
 .price-cell {
   font-weight: 600;
   color: var(--color-pine);
