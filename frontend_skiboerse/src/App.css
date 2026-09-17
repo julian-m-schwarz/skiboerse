@@ -2245,6 +2245,12 @@ body {
   color: #2E7D32;
 }
 
+/* Entered ahead of the event, not yet physically handed in */
+.status-pending {
+  background: #FFF3E0;
+  color: #E65100;
+}
+
 .returned-timestamp {
   display: inline;
   font-size: 0.7rem;

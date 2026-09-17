@@ -11,6 +11,7 @@ function SellerItemsView() {
   const [error, setError] = useState(null);
   const [feeUpdating, setFeeUpdating] = useState(false);
   const [printingId, setPrintingId] = useState(null);
+  const [acceptingAll, setAcceptingAll] = useState(false);
 
   useEffect(() => {
     fetchSellerAndItems();
@@ -33,6 +34,22 @@ function SellerItemsView() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const acceptItems = async (itemIds) => {
+    setAcceptingAll(true);
+    try {
+      const response = await apiFetch('/api/items/accept/', {
+        method: 'POST',
+        body: JSON.stringify({ items: itemIds })
+      });
+      if (!response.ok) throw new Error('Artikel konnten nicht angenommen werden');
+      await fetchSellerAndItems();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    } finally {
+      setAcceptingAll(false);
     }
   };
 
@@ -73,6 +90,8 @@ function SellerItemsView() {
     return <div className="error">Fehler: {error}</div>;
   }
 
+  const pendingItemIds = items.filter((item) => !item.accepted_at).map((item) => item.id);
+
   return (
     <div className="seller-items-container">
       <div className="page-header">
@@ -104,6 +123,18 @@ function SellerItemsView() {
             <Link to={`/inventory/sellers/${id}/edit`} className="btn btn-secondary" style={{marginLeft: '0.5rem'}}>
               Verkäufer bearbeiten
             </Link>
+            {pendingItemIds.length > 0 && (
+              <button
+                onClick={() => acceptItems(pendingItemIds)}
+                className="btn btn-success"
+                style={{marginLeft: '0.5rem'}}
+                disabled={acceptingAll}
+              >
+                {acceptingAll
+                  ? 'Nimmt an…'
+                  : `Alle ${pendingItemIds.length} Artikel annehmen`}
+              </button>
+            )}
           </div>
         </div>
         <Link to={`/inventory/items/new?seller=${id}`} className="btn btn-primary">
@@ -139,6 +170,7 @@ function SellerItemsView() {
                 // A sold or picked-up article is done: it must not be edited
                 // and a fresh label for it would be meaningless.
                 const isLocked = Boolean(item.is_sold || item.picked_up_at);
+                const isPending = !item.accepted_at;
                 return (
                 <tr key={item.id} className={isLocked ? 'sold-row' : ''}>
                   <td className="barcode-cell">{item.barcode}</td>
@@ -157,6 +189,8 @@ function SellerItemsView() {
                           {new Date(item.picked_up_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </span>
+                    ) : isPending ? (
+                      <span className="status-badge status-pending">Nicht angenommen</span>
                     ) : (
                       <span className="status-badge status-available">Verfügbar</span>
                     )}
@@ -170,6 +204,15 @@ function SellerItemsView() {
                     )}
                   </td>
                   <td className="actions-cell">
+                    {isPending && (
+                      <button
+                        onClick={() => acceptItems([item.id])}
+                        className="btn btn-success btn-small"
+                        disabled={acceptingAll}
+                      >
+                        Angenommen
+                      </button>
+                    )}
                     <button
                       onClick={() => printLabel(item.id)}
                       className="btn btn-primary btn-small"

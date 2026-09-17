@@ -9,6 +9,7 @@ function ItemList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [printingId, setPrintingId] = useState(null);
+  const [acceptingId, setAcceptingId] = useState(null);
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
 
@@ -49,6 +50,22 @@ function ItemList() {
       fetchItems();
     } catch (err) {
       alert('Fehler beim Löschen: ' + err.message);
+    }
+  };
+
+  const acceptItems = async (itemIds) => {
+    setAcceptingId(itemIds[0]);
+    try {
+      const response = await apiFetch('/api/items/accept/', {
+        method: 'POST',
+        body: JSON.stringify({ items: itemIds })
+      });
+      if (!response.ok) throw new Error('Artikel konnten nicht angenommen werden');
+      fetchItems();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    } finally {
+      setAcceptingId(null);
     }
   };
 
@@ -114,6 +131,7 @@ function ItemList() {
                 // A sold or picked-up article is done: it must not be edited
                 // and a fresh label for it would be meaningless.
                 const isLocked = Boolean(item.is_sold || item.picked_up_at);
+                const isPending = !item.accepted_at;
                 return (
                 <tr key={item.id} className={isLocked ? 'sold-row' : ''}>
                   <td className="barcode-cell">{item.barcode}</td>
@@ -147,6 +165,8 @@ function ItemList() {
                       </span>
                     ) : item.is_stolen ? (
                       <span className="status-badge status-stolen">🚨 Gestohlen</span>
+                    ) : isPending ? (
+                      <span className="status-badge status-pending">Nicht angenommen</span>
                     ) : item.returned_at ? (
                       <>
                         <span className="status-badge status-available">Verfügbar</span>
@@ -162,6 +182,15 @@ function ItemList() {
                     )}
                   </td>
                   <td className="actions-cell">
+                    {isPending && (
+                      <button
+                        onClick={() => acceptItems([item.id])}
+                        className="btn btn-success btn-small"
+                        disabled={acceptingId === item.id}
+                      >
+                        {acceptingId === item.id ? 'Nimmt an…' : 'Angenommen'}
+                      </button>
+                    )}
                     <button
                       onClick={() => printLabel(item.id)}
                       className="btn btn-primary btn-small"

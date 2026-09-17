@@ -128,6 +128,7 @@ class SellerSerializer(serializers.ModelSerializer):
 class ItemSerializer(serializers.ModelSerializer):
     seller_name = serializers.SerializerMethodField()
     seller_mobile = serializers.SerializerMethodField()
+    seller_is_major = serializers.SerializerMethodField()
     payment_method = serializers.SerializerMethodField()
 
     class Meta:
@@ -145,22 +146,27 @@ class ItemSerializer(serializers.ModelSerializer):
             "seller",
             "seller_name",
             "seller_mobile",
+            "seller_is_major",
             "barcode",
             "is_sold",
             "is_stolen",
             "sold_at",
             "returned_at",
             "picked_up_at",
+            "accepted_at",
             "payment_method",
             "created_at",
         ]
-        read_only_fields = ["created_at", "seller_name", "seller_mobile", "barcode", "sold_at", "returned_at", "picked_up_at", "payment_method"]
+        read_only_fields = ["created_at", "seller_name", "seller_mobile", "seller_is_major", "barcode", "sold_at", "returned_at", "picked_up_at", "accepted_at", "payment_method"]
 
     def get_seller_name(self, obj):
         return f"{obj.seller.first_name} {obj.seller.last_name}"
 
     def get_seller_mobile(self, obj):
         return obj.seller.mobile_number
+
+    def get_seller_is_major(self, obj):
+        return obj.seller.is_major_seller
 
     def get_payment_method(self, obj):
         sale = obj.sales.first()
@@ -187,6 +193,7 @@ class ItemBarcodeSerializer(serializers.ModelSerializer):
             "is_stolen",
             "returned_at",
             "picked_up_at",
+            "accepted_at",
             "payment_method",
         ]
 

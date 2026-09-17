@@ -199,12 +199,24 @@ class Item(models.Model):
     sold_at = models.DateTimeField(null=True, blank=True)
     returned_at = models.DateTimeField(null=True, blank=True, db_index=True)
     picked_up_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    accepted_at = models.DateTimeField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.barcode} - {self.category} - ${self.price}"
 
+    @property
+    def is_accepted(self):
+        return self.accepted_at is not None
+
     def save(self, *args, **kwargs):
+        # Regular sellers hand their goods over at the desk, so those items
+        # count as accepted the moment they are entered. A major seller's items
+        # are entered ahead of the event and are only accepted once they
+        # physically arrive.
+        if self._state.adding and self.accepted_at is None and not self.seller.is_major_seller:
+            self.accepted_at = timezone.now()
+
         if not self.barcode:
             with transaction.atomic():
                 seller_num = self.seller.seller_number if self.seller.seller_number else 1

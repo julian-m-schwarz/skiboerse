@@ -63,6 +63,8 @@ function Checkout() {
         setError('Artikel bereits im Warenkorb');
       } else if (item.is_sold) {
         setError('Artikel bereits verkauft');
+      } else if (!item.accepted_at) {
+        setError('Artikel noch nicht angenommen');
       } else {
         setCart([...cart, item]);
         setBarcodeInput('');

@@ -336,6 +336,26 @@ class ItemViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['post'])
+    def accept(self, request):
+        """
+        Mark items as physically handed in.
+        POST /api/items/accept/
+        Body: {"items": [1, 2, 3]}
+        Serves both the per-row button and the bulk action for a seller.
+        """
+        item_ids = request.data.get('items', [])
+        if not item_ids:
+            return Response(
+                {'error': 'Keine Artikel angegeben'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        updated = Item.objects.filter(pk__in=item_ids, accepted_at__isnull=True).update(
+            accepted_at=timezone.now()
+        )
+        return Response({'accepted': updated})
+
+    @action(detail=False, methods=['post'])
     def verify_return(self, request):
         """
         Mark an item as returned by barcode.
@@ -397,6 +417,13 @@ class SaleViewSet(viewsets.ModelViewSet):
             if already_sold:
                 return Response(
                     {'error': 'Artikel bereits verkauft', 'barcodes': already_sold},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            not_accepted = [item.barcode for item in items if not item.is_accepted]
+            if not_accepted:
+                return Response(
+                    {'error': 'Artikel noch nicht angenommen', 'barcodes': not_accepted},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
