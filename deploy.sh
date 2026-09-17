@@ -61,8 +61,31 @@ cd "$REPO_DIR"
 echo "→ [6/9] Statische Dateien sammeln..."
 python manage.py collectstatic --noinput --clear
 
-# ── 7. Nginx ──────────────────────────────────────────────────
-echo "→ [7/9] Nginx..."
+# ── 7. Nginx & Netzwerkname ───────────────────────────────────
+echo "→ [7/9] Nginx & Netzwerkname..."
+
+# skiboerse.local nur ueber IPv4 ankuendigen. Wird zusaetzlich eine IPv6-Adresse
+# verkuendet, bevorzugt Chrome diese und bleibt mit ERR_ADDRESS_UNREACHABLE
+# haengen, waehrend Safari still auf IPv4 ausweicht. use-ipv6 allein genuegt
+# nicht: das regelt nur Avahis eigene Kommunikation, nicht die veroeffentlichten
+# Adressen - dafuer ist publish-aaaa-on-ipv4 zustaendig.
+AVAHI_CONF=/etc/avahi/avahi-daemon.conf
+if [ -f "$AVAHI_CONF" ]; then
+  sudo sed -i 's/^#\?use-ipv6=.*/use-ipv6=no/' "$AVAHI_CONF"
+  sudo sed -i 's/^#\?publish-aaaa-on-ipv4=.*/publish-aaaa-on-ipv4=no/' "$AVAHI_CONF"
+  sudo systemctl restart avahi-daemon
+
+  # Die sed-Zeilen ersetzen nur vorhandene Schluessel. Fehlt einer, bliebe die
+  # Einstellung sonst still wirkungslos.
+  for key in "use-ipv6=no" "publish-aaaa-on-ipv4=no"; do
+    if ! grep -q "^$key\$" "$AVAHI_CONF"; then
+      echo "  WARNUNG: '$key' fehlt in $AVAHI_CONF."
+      echo "           skiboerse.local wird dann auch per IPv6 angekuendigt und"
+      echo "           laesst sich in Chrome nicht oeffnen. Bitte manuell ergaenzen."
+    fi
+  done
+fi
+
 sudo cp "$REPO_DIR/nginx/skiboerse.conf" /etc/nginx/sites-available/skiboerse
 
 # Symlink anlegen falls er fehlt
