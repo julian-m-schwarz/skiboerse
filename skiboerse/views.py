@@ -698,7 +698,7 @@ def analytics(request):
     pending = [i for i in unsold if not i.returned_at]
 
     total_revenue = sum(float(i.price) for i in sold)
-    commission = round(total_revenue * 0.10, 2)
+    commission = round(sum(float(i.price) * i.seller.commission_rate() for i in sold), 2)
 
     # By category
     categories = {}
@@ -722,9 +722,11 @@ def analytics(request):
                 'number': item.seller.seller_number,
                 'sold': 0,
                 'revenue': 0.0,
+                'payout': 0.0,
             }
         sellers[sid]['sold'] += 1
         sellers[sid]['revenue'] += float(item.price)
+        sellers[sid]['payout'] += float(item.price) * (1 - item.seller.commission_rate())
     top_sellers = sorted(sellers.values(), key=lambda x: x['revenue'], reverse=True)[:10]
 
     # Price range distribution

@@ -102,7 +102,7 @@ function SellerItemsView() {
           <div className="seller-info-header">
             <p><strong>Verkäufer-Nr.:</strong> {seller?.seller_number}</p>
             <p><strong>Telefon:</strong> {seller?.mobile_number}</p>
-            {seller?.is_member && <span className="badge badge-member">Mitglied</span>}
+            {seller?.is_member && <span className="badge badge-member">Aktive</span>}
           </div>
           {seller && !seller.is_member && (
             <div className="fee-checkbox-row" style={{marginTop: '0.5rem'}}>

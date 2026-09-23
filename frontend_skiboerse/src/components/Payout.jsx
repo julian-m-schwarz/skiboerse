@@ -219,7 +219,7 @@ function Payout() {
               <h2>{payoutData.seller.full_name}</h2>
               <p>📱 {payoutData.seller.mobile_number}</p>
               {payoutData.seller.is_member && (
-                <span className="badge badge-member">Mitglied</span>
+                <span className="badge badge-member">Aktive</span>
               )}
             </div>
             <div className={`seller-status-indicator ${payoutData.seller_all_done ? 'status-complete' : 'status-incomplete'}`}>
@@ -275,7 +275,7 @@ function Payout() {
 
             <div className="calculation-row deduction">
               <span className="calc-label">
-                - Provision (10%)
+                {payoutData.commission_waived ? '- Provision (entfällt für Aktive)' : '- Provision (10%)'}
               </span>
               <span className="calc-value negative">-{payoutData.commission.toFixed(2)} €</span>
             </div>
@@ -470,7 +470,7 @@ function Payout() {
             </div>
             <div className="popup-body">
               <p className="warning-message">
-                Welche Artikel wurden gestohlen? Diese werden dem Verkäufer erstattet (Preis − 10% Provision).
+                Welche Artikel wurden gestohlen? Diese werden dem Verkäufer erstattet ({payoutData?.commission_waived ? 'voller Preis' : 'Preis − 10% Provision'}).
               </p>
               <div className="stolen-checklist">
                 {payoutData?.unsold_not_returned?.map((item) => (
@@ -568,7 +568,7 @@ function Payout() {
                   <span>{payoutData?.total_sales?.toFixed(2)} €</span>
                 </div>
                 <div className="confirm-detail-row confirm-detail-deduction">
-                  <span>− Provision (10%)</span>
+                  <span>{payoutData?.commission_waived ? '− Provision (entfällt für Aktive)' : '− Provision (10%)'}</span>
                   <span>−{payoutData?.commission?.toFixed(2)} €</span>
                 </div>
                 {!payoutData?.acceptance_fee_paid && payoutData?.fee_deducted > 0 && (

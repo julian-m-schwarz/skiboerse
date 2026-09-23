@@ -223,7 +223,7 @@ function SellerForm() {
                 className="form-checkbox"
               />
               <label htmlFor="is_member" className="form-checkbox-label">
-                Ist Mitglied
+                Aktive (keine Annahmegebühr, keine Provision)
               </label>
             </div>
 

@@ -102,11 +102,11 @@ class Seller(models.Model):
 
     def calculate_acceptance_fee(self):
         """
-        Calculate acceptance fee based on item count and membership status.
+        Calculate acceptance fee based on item count and active status.
         - Major sellers: 0€
-        - Members: 0€
-        - Non-members with < 20 items: 5€
-        - Non-members with >= 20 items: 10€
+        - Active club members (is_member, shown as "Aktive"): 0€
+        - Others with < 20 items: 5€
+        - Others with >= 20 items: 10€
         Uses len() so a prefetched items cache is reused instead of issuing a COUNT query.
         """
         if self.is_major_seller or self.is_member:
@@ -117,6 +117,10 @@ class Seller(models.Model):
             return 5.00
         else:
             return 10.00
+
+    def commission_rate(self):
+        """Active club members (is_member, shown as "Aktive") pay no commission."""
+        return 0 if self.is_member else 0.10
 
     def calculate_payout(self):
         """
@@ -132,8 +136,8 @@ class Seller(models.Model):
         stolen_revenue = sum(float(item.price) for item in stolen_items)
         total_revenue = total_sales + stolen_revenue
 
-        # Calculate 10% commission on total (sold + stolen)
-        commission = total_revenue * 0.10
+        # 10% commission on total (sold + stolen); active members pay none
+        commission = self.commission_rate() * total_revenue
 
         # Calculate acceptance fee
         acceptance_fee = self.calculate_acceptance_fee()
@@ -147,6 +151,7 @@ class Seller(models.Model):
         return {
             "total_sales": round(total_revenue, 2),
             "commission": round(commission, 2),
+            "commission_waived": self.is_member,
             "acceptance_fee": round(acceptance_fee, 2),
             "acceptance_fee_paid": self.acceptance_fee_paid,
             "fee_deducted": round(fee_to_deduct, 2),

@@ -496,7 +496,7 @@ function ItemForm() {
           <p><strong>{isEditMode ? 'Artikel bearbeiten für:' : 'Artikel erfassen für:'}</strong> {currentSeller.full_name}</p>
           <p style={{fontSize: '0.9rem', color: '#666'}}>
             Tel: {currentSeller.mobile_number}
-            {currentSeller.is_member && <span className="badge badge-member" style={{marginLeft: '0.5rem'}}>Mitglied</span>}
+            {currentSeller.is_member && <span className="badge badge-member" style={{marginLeft: '0.5rem'}}>Aktive</span>}
           </p>
         </div>
       )}

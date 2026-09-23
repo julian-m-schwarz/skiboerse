@@ -232,7 +232,7 @@ function Dashboard() {
         </div>
         <div className="dash-kpi">
           <span className="dash-kpi-value">{data.commission.toFixed(2)} €</span>
-          <span className="dash-kpi-label">Provision (10%)</span>
+          <span className="dash-kpi-label">Provision (10%, ohne Aktive)</span>
         </div>
         <div className="dash-kpi dash-kpi-green">
           <span className="dash-kpi-value">{sellRate}%</span>
@@ -346,7 +346,7 @@ function Dashboard() {
                     <td><strong>#{s.number}</strong> {s.name}</td>
                     <td>{s.sold}</td>
                     <td>{s.revenue.toFixed(2)} €</td>
-                    <td>{(s.revenue * 0.9).toFixed(2)} €</td>
+                    <td>{s.payout.toFixed(2)} €</td>
                   </tr>
                 ))}
               </tbody>

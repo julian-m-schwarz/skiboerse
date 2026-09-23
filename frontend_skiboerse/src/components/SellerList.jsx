@@ -104,7 +104,7 @@ function SellerList() {
                 <td>{seller.mobile_number}</td>
                 <td>{seller.item_count}</td>
                 <td>
-                  {seller.is_member && <span className="badge badge-member">Mitglied</span>}
+                  {seller.is_member && <span className="badge badge-member">Aktive</span>}
                   {!seller.is_member && seller.acceptance_fee_paid && <span className="badge badge-paid">Gebühr bezahlt</span>}
                   {!seller.is_member && !seller.acceptance_fee_paid && (
                     <span className="badge badge-fee-open">⚠️ {seller.acceptance_fee?.toFixed(2) || '0.00'} €</span>
