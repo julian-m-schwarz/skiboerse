@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { apiFetch } from '../api';
+import { apiFetch, downloadFile } from '../api';
 import { printItemLabel } from '../printLabel';
 import { useAuth } from '../AuthContext';
 import useMajorAcceptance from '../hooks/useMajorAcceptance';
@@ -54,6 +54,7 @@ function ItemList() {
   const [error, setError] = useState(null);
   const [printingId, setPrintingId] = useState(null);
   const [acceptingId, setAcceptingId] = useState(null);
+  const [exporting, setExporting] = useState(false);
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const { open: acceptanceOpen, setOpen: setAcceptanceOpen } = useMajorAcceptance();
@@ -132,6 +133,17 @@ function ItemList() {
     }
   };
 
+  const exportItems = async () => {
+    setExporting(true);
+    try {
+      await downloadFile('/api/items/export/', 'Artikel.xlsx');
+    } catch (err) {
+      alert('Fehler beim Export: ' + err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const printLabel = async (itemId) => {
     setPrintingId(itemId);
     try {
@@ -157,6 +169,16 @@ function ItemList() {
           <Link to="/inventory" className="btn btn-secondary" style={{marginRight: '0.5rem'}}>
             ← Zurück
           </Link>
+          {isAdmin && (
+            <button
+              onClick={exportItems}
+              className="btn btn-secondary"
+              style={{marginRight: '0.5rem'}}
+              disabled={exporting}
+            >
+              {exporting ? 'Exportiert…' : 'Excel-Export'}
+            </button>
+          )}
           <Link to="/inventory/items/new" className="btn btn-primary">
             + Neuer Artikel
           </Link>

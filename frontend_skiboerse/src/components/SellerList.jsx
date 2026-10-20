@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { apiFetch } from '../api';
+import { apiFetch, downloadFile } from '../api';
 import { useAuth } from '../AuthContext';
 
 function SellerList() {
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [exporting, setExporting] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -43,6 +44,17 @@ function SellerList() {
     }
   };
 
+  const exportSellers = async () => {
+    setExporting(true);
+    try {
+      await downloadFile('/api/sellers/export/', 'Verkaeufer.xlsx');
+    } catch (err) {
+      alert('Fehler beim Export: ' + err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleCardClick = (sellerId) => {
     navigate(`/inventory/sellers/${sellerId}`);
   };
@@ -65,9 +77,21 @@ function SellerList() {
             ← Zurück
           </Link>
         </div>
-        <Link to="/inventory/sellers/new" className="btn btn-primary">
-          + Neuer Verkäufer
-        </Link>
+        <div>
+          {isAdmin && (
+            <button
+              onClick={exportSellers}
+              className="btn btn-secondary"
+              style={{marginRight: '0.5rem'}}
+              disabled={exporting}
+            >
+              {exporting ? 'Exportiert…' : 'Excel-Export'}
+            </button>
+          )}
+          <Link to="/inventory/sellers/new" className="btn btn-primary">
+            + Neuer Verkäufer
+          </Link>
+        </div>
       </div>
 
       {error && <div className="error">Fehler: {error}</div>}

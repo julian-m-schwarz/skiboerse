@@ -13,6 +13,9 @@ gunicorn>=21.2
 python-barcode>=0.15
 Pillow>=10.0
 
+# Excel export of sellers and items
+openpyxl>=3.1
+
 # Caching (used by return-check toggle via django.core.cache)
 # FileBasedCache is built into Django — no extra package needed
 

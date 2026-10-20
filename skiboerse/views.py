@@ -66,6 +66,16 @@ class SellerViewSet(viewsets.ModelViewSet):
             qs = qs.filter(seller_number=seller_number)
         return qs
 
+    @action(detail=False, methods=['get'])
+    def export(self, request):
+        """GET /api/sellers/export/ — all sellers as an Excel file (admin only)."""
+        if not is_admin(request.user):
+            return Response({'error': 'Keine Berechtigung'}, status=status.HTTP_403_FORBIDDEN)
+
+        from .exports import sellers_workbook, xlsx_response
+        sellers = Seller.objects.prefetch_related('items').order_by('seller_number')
+        return xlsx_response(sellers_workbook(sellers), 'Verkaeufer')
+
     @action(detail=True, methods=['get'])
     def payout(self, request, pk=None):
         """
@@ -152,6 +162,19 @@ class ItemViewSet(viewsets.ModelViewSet):
         if seller_id is not None:
             qs = qs.filter(seller_id=seller_id)
         return qs
+
+    @action(detail=False, methods=['get'])
+    def export(self, request):
+        """GET /api/items/export/ — all items as an Excel file (admin only)."""
+        if not is_admin(request.user):
+            return Response({'error': 'Keine Berechtigung'}, status=status.HTTP_403_FORBIDDEN)
+
+        from .exports import items_workbook, xlsx_response
+        items = (
+            Item.objects.select_related('seller').prefetch_related('sales')
+            .order_by('seller__seller_number', 'barcode')
+        )
+        return xlsx_response(items_workbook(items), 'Artikel')
 
     @action(detail=False, methods=['get'])
     def pending(self, request):
