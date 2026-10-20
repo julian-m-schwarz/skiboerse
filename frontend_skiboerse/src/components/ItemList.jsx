@@ -114,6 +114,24 @@ function ItemList() {
     }
   };
 
+  const unacceptItem = async (itemId) => {
+    if (!window.confirm('Annahme für diesen Artikel rückgängig machen?')) return;
+
+    setAcceptingId(itemId);
+    try {
+      const response = await apiFetch('/api/items/unaccept/', {
+        method: 'POST',
+        body: JSON.stringify({ items: [itemId] })
+      });
+      if (!response.ok) throw new Error('Annahme konnte nicht rückgängig gemacht werden');
+      fetchItems();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    } finally {
+      setAcceptingId(null);
+    }
+  };
+
   const printLabel = async (itemId) => {
     setPrintingId(itemId);
     try {
@@ -181,6 +199,10 @@ function ItemList() {
                 // and a fresh label for it would be meaningless.
                 const isLocked = Boolean(item.is_sold || item.picked_up_at);
                 const isPending = !item.accepted_at;
+                // Only a major seller's acceptance is a separate step that can
+                // be mistaken, and only until the item has moved on.
+                const canUnaccept = !isPending && item.seller_is_major && !isLocked
+                  && !item.is_stolen && !item.returned_at;
                 return (
                 <tr key={item.id} className={isLocked ? 'sold-row' : ''}>
                   <td className="barcode-cell">{item.barcode}</td>
@@ -238,6 +260,15 @@ function ItemList() {
                         disabled={acceptingId === item.id}
                       >
                         {acceptingId === item.id ? 'Nimmt an…' : 'Angenommen'}
+                      </button>
+                    )}
+                    {canUnaccept && acceptanceOpen && (
+                      <button
+                        onClick={() => unacceptItem(item.id)}
+                        className="btn btn-secondary btn-small"
+                        disabled={acceptingId === item.id}
+                      >
+                        {acceptingId === item.id ? '…' : 'Annahme rückgängig'}
                       </button>
                     )}
                     <button

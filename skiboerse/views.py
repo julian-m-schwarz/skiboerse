@@ -375,6 +375,43 @@ class ItemViewSet(viewsets.ModelViewSet):
         return Response({'accepted': updated})
 
     @action(detail=False, methods=['post'])
+    def unaccept(self, request):
+        """
+        Undo an acceptance that was confirmed by mistake.
+        POST /api/items/unaccept/
+        Body: {"items": [1, 2, 3]}
+        Only while the acceptance phase is open, and only for a major seller's
+        items - a regular seller's items are accepted the moment they are
+        entered, so there is nothing to take back. An item that has already
+        moved on (sold, stolen, reported back or picked up) stays accepted.
+        """
+        from django.core.cache import cache
+
+        if not cache.get('major_acceptance_open', True):
+            return Response(
+                {'error': 'Die Annahme wurde bereits abgeschlossen'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        item_ids = request.data.get('items', [])
+        if not item_ids:
+            return Response(
+                {'error': 'Keine Artikel angegeben'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        updated = Item.objects.filter(
+            pk__in=item_ids,
+            accepted_at__isnull=False,
+            seller__is_major_seller=True,
+            is_sold=False,
+            is_stolen=False,
+            returned_at__isnull=True,
+            picked_up_at__isnull=True,
+        ).update(accepted_at=None)
+        return Response({'unaccepted': updated})
+
+    @action(detail=False, methods=['post'])
     def verify_return(self, request):
         """
         Mark an item as returned by barcode.

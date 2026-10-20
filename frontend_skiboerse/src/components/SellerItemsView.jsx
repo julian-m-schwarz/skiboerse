@@ -55,6 +55,24 @@ function SellerItemsView() {
     }
   };
 
+  const unacceptItem = async (itemId) => {
+    if (!window.confirm('Annahme für diesen Artikel rückgängig machen?')) return;
+
+    setAcceptingAll(true);
+    try {
+      const response = await apiFetch('/api/items/unaccept/', {
+        method: 'POST',
+        body: JSON.stringify({ items: [itemId] })
+      });
+      if (!response.ok) throw new Error('Annahme konnte nicht rückgängig gemacht werden');
+      await fetchSellerAndItems();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    } finally {
+      setAcceptingAll(false);
+    }
+  };
+
   const toggleFeePaid = async () => {
     setFeeUpdating(true);
     try {
@@ -173,6 +191,10 @@ function SellerItemsView() {
                 // and a fresh label for it would be meaningless.
                 const isLocked = Boolean(item.is_sold || item.picked_up_at);
                 const isPending = !item.accepted_at;
+                // Only a major seller's acceptance is a separate step that can
+                // be mistaken, and only until the item has moved on.
+                const canUnaccept = !isPending && seller?.is_major_seller && !isLocked
+                  && !item.is_stolen && !item.returned_at;
                 return (
                 <tr key={item.id} className={isLocked ? 'sold-row' : ''}>
                   <td className="barcode-cell">{item.barcode}</td>
@@ -213,6 +235,15 @@ function SellerItemsView() {
                         disabled={acceptingAll}
                       >
                         Angenommen
+                      </button>
+                    )}
+                    {canUnaccept && acceptanceOpen && (
+                      <button
+                        onClick={() => unacceptItem(item.id)}
+                        className="btn btn-secondary btn-small"
+                        disabled={acceptingAll}
+                      >
+                        Annahme rückgängig
                       </button>
                     )}
                     <button
