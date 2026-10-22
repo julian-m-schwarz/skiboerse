@@ -58,8 +58,8 @@ class Seller(models.Model):
     REGULAR_SELLER_START_NUMBER = 11
 
     @classmethod
-    def next_major_seller_number(cls):
-        """Lowest free number in the Großverkäufer range, or None if full.
+    def free_major_seller_numbers(cls):
+        """Numbers in the Großverkäufer range nobody has yet.
 
         Checks every seller rather than only major ones so numbers handed out
         under the previous scheme cannot collide with a new assignment.
@@ -68,7 +68,12 @@ class Seller(models.Model):
             cls.objects.filter(seller_number__in=cls.MAJOR_SELLER_NUMBERS)
             .values_list("seller_number", flat=True)
         )
-        return next((n for n in cls.MAJOR_SELLER_NUMBERS if n not in taken), None)
+        return [n for n in cls.MAJOR_SELLER_NUMBERS if n not in taken]
+
+    @classmethod
+    def next_major_seller_number(cls):
+        """Lowest free number in the Großverkäufer range, or None if full."""
+        return next(iter(cls.free_major_seller_numbers()), None)
 
     def save(self, *args, **kwargs):
         if not self.seller_number:

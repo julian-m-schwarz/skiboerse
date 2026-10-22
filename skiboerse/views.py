@@ -70,6 +70,11 @@ class SellerViewSet(viewsets.ModelViewSet):
         return qs
 
     @action(detail=False, methods=['get'])
+    def free_major_numbers(self, request):
+        """GET /api/sellers/free_major_numbers/ — numbers a new Großverkäufer can get."""
+        return Response({'numbers': Seller.free_major_seller_numbers()})
+
+    @action(detail=False, methods=['get'])
     def export(self, request):
         """GET /api/sellers/export/ — all sellers as an Excel file (admin only)."""
         if not is_admin(request.user):

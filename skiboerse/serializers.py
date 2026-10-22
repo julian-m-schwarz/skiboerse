@@ -1,3 +1,4 @@
+from django.db import IntegrityError, transaction
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Seller, Item, Sale, UserProfile
@@ -79,6 +80,9 @@ class SellerSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     item_count = serializers.SerializerMethodField()
     acceptance_fee = serializers.SerializerMethodField()
+    # Declared explicitly: the model field is not editable, which would make
+    # it read-only here. Only used when creating a Großverkäufer, see validate().
+    seller_number = serializers.IntegerField(required=False, allow_null=True)
 
     class Meta:
         model = Seller
@@ -100,7 +104,30 @@ class SellerSerializer(serializers.ModelSerializer):
             "item_count",
             "created_at",
         ]
-        read_only_fields = ["created_at", "full_name", "seller_number", "item_count", "acceptance_fee"]
+        read_only_fields = ["created_at", "full_name", "item_count", "acceptance_fee"]
+
+    def validate(self, attrs):
+        # A number can only be picked when creating a Großverkäufer. Regular
+        # sellers are numbered automatically, and an existing seller keeps
+        # theirs - the edit form sends it back unchanged, so drop it quietly.
+        number = attrs.pop("seller_number", None)
+        if self.instance is None and attrs.get("is_major_seller") and number is not None:
+            if number not in Seller.free_major_seller_numbers():
+                raise serializers.ValidationError(
+                    {"seller_number": f"Die Großverkäufer-Nummer {number} ist nicht mehr frei."}
+                )
+            attrs["seller_number"] = number
+        return attrs
+
+    def create(self, validated_data):
+        try:
+            with transaction.atomic():
+                return super().create(validated_data)
+        except IntegrityError:
+            # Taken by another station between the check and the save.
+            raise serializers.ValidationError(
+                {"seller_number": "Diese Nummer wurde gerade vergeben. Bitte eine andere wählen."}
+            )
 
     def validate_is_major_seller(self, value):
         # Report the exhausted number range as a 400 instead of letting the

@@ -13,8 +13,11 @@ function SellerForm() {
     mobile_number: '',
     is_member: false,
     acceptance_fee_paid: false,
-    is_major_seller: false
+    is_major_seller: false,
+    seller_number: null
   });
+  // Free Großverkäufer numbers, null until loaded.
+  const [freeMajorNumbers, setFreeMajorNumbers] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
@@ -24,6 +27,28 @@ function SellerForm() {
       fetchSeller();
     }
   }, [id]);
+
+  const choosingMajorNumber = !isEditMode && formData.is_major_seller;
+
+  useEffect(() => {
+    if (choosingMajorNumber) fetchFreeMajorNumbers();
+  }, [choosingMajorNumber]);
+
+  const fetchFreeMajorNumbers = async () => {
+    try {
+      const response = await apiFetch('/api/sellers/free_major_numbers/');
+      if (!response.ok) throw new Error('Freie Nummern konnten nicht geladen werden');
+      const { numbers } = await response.json();
+      setFreeMajorNumbers(numbers);
+      // Keep the choice if it is still free, otherwise offer the lowest one.
+      setFormData(prev => ({
+        ...prev,
+        seller_number: numbers.includes(prev.seller_number) ? prev.seller_number : (numbers[0] ?? null)
+      }));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   const fetchSeller = async () => {
     try {
@@ -126,12 +151,21 @@ function SellerForm() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        if (errorData.seller_number) {
+          // Someone else took the number meanwhile; offer the current ones.
+          fetchFreeMajorNumbers();
+          throw new Error(errorData.seller_number[0]);
+        }
         throw new Error(JSON.stringify(errorData));
       }
 
       const data = await response.json();
 
-      if (!isEditMode) {
+      if (!isEditMode && data.is_major_seller) {
+        // A Großverkäufer's items come from their Excel list, imported on
+        // the seller page.
+        navigate(`/inventory/sellers/${data.id}`);
+      } else if (!isEditMode) {
         navigate(`/inventory/items/new?seller=${data.id}&new=true`);
       } else {
         navigate('/inventory/sellers');
@@ -243,13 +277,37 @@ function SellerForm() {
               </div>
             )}
           </div>
+
+          {choosingMajorNumber && freeMajorNumbers !== null && (
+            <div className="form-group" style={{marginTop: '1rem'}}>
+              <label htmlFor="seller_number" className="form-label">Verkäufernummer</label>
+              {freeMajorNumbers.length > 0 ? (
+                <select
+                  id="seller_number"
+                  name="seller_number"
+                  value={formData.seller_number ?? ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, seller_number: Number(e.target.value) }))}
+                  className="form-select"
+                  required
+                >
+                  {freeMajorNumbers.map((number) => (
+                    <option key={number} value={number}>{number}</option>
+                  ))}
+                </select>
+              ) : (
+                <span className="validation-error">
+                  Alle Großverkäufer-Nummern (1–10) sind bereits vergeben.
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="form-actions">
           <button
             type="submit"
             className="btn btn-primary"
-            disabled={loading}
+            disabled={loading || (choosingMajorNumber && !formData.seller_number)}
           >
             {loading ? 'Speichern...' : (isEditMode ? 'Aktualisieren' : 'Verkäufer anlegen')}
           </button>
