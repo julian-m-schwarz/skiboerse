@@ -1,7 +1,7 @@
 import functools
 import os
 from rest_framework import viewsets, status
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from rest_framework.response import Response
@@ -78,6 +78,68 @@ class SellerViewSet(viewsets.ModelViewSet):
         from .exports import sellers_workbook, xlsx_response
         sellers = Seller.objects.prefetch_related('items').order_by('seller_number')
         return xlsx_response(sellers_workbook(sellers), 'Verkaeufer')
+
+    @action(detail=True, methods=['post'])
+    def import_items(self, request, pk=None):
+        """
+        POST /api/sellers/{id}/import_items/ — create a major seller's items
+        from their Excel list. Multipart: file, dry_run ("1" only checks the
+        file and returns a summary). All or nothing: if any row is wrong,
+        no item is created.
+        """
+        from collections import Counter
+        from django.core.cache import cache
+        from .item_import import parse_items, ImportFileError
+
+        seller = self.get_object()
+        if not seller.is_major_seller:
+            return Response(
+                {'error': 'Der Excel-Import ist nur für Großverkäufer vorgesehen'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Items imported now could never be accepted.
+        if not cache.get('major_acceptance_open', True):
+            return Response(
+                {'error': 'Die Annahme der Großverkäufer ist bereits abgeschlossen'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        upload = request.FILES.get('file')
+        if upload is None:
+            return Response({'error': 'Keine Datei hochgeladen'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            items, warnings, errors = parse_items(upload, seller)
+        except ImportFileError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        if errors:
+            return Response(
+                {'error': 'Die Datei enthält Fehler, es wurde nichts importiert.', 'details': errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if request.data.get('dry_run') == '1':
+            numbers = sorted(item.barcode for item in items)
+            return Response({
+                'count': len(items),
+                'categories': dict(Counter(item.category for item in items).most_common()),
+                'first_barcode': numbers[0],
+                'last_barcode': numbers[-1],
+                'warnings': warnings,
+            })
+
+        try:
+            with transaction.atomic():
+                for item in items:
+                    item.save()
+        except IntegrityError:
+            # Someone entered an item for this seller in the meantime.
+            return Response(
+                {'error': 'Eine Artikelnummer wurde gerade anderweitig vergeben. Bitte erneut importieren.'},
+                status=status.HTTP_409_CONFLICT
+            )
+        return Response({'created': len(items)}, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['get'])
     def payout(self, request, pk=None):

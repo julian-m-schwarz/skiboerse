@@ -26,7 +26,8 @@ export async function apiFetch(path, options = {}) {
     headers['X-CSRFToken'] = getCSRFToken();
   }
 
-  if (options.body && !headers['Content-Type']) {
+  // A FormData upload needs the browser to set the multipart boundary itself.
+  if (options.body && !(options.body instanceof FormData) && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
 

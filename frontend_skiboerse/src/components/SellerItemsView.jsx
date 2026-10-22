@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { apiFetch } from '../api';
 import { printItemLabel } from '../printLabel';
@@ -14,6 +14,8 @@ function SellerItemsView() {
   const [printingId, setPrintingId] = useState(null);
   const [acceptingAll, setAcceptingAll] = useState(false);
   const { open: acceptanceOpen } = useMajorAcceptance();
+  const [importing, setImporting] = useState(false);
+  const importInputRef = useRef(null);
 
   useEffect(() => {
     fetchSellerAndItems();
@@ -70,6 +72,49 @@ function SellerItemsView() {
       alert('Fehler: ' + err.message);
     } finally {
       setAcceptingAll(false);
+    }
+  };
+
+  const uploadItemList = async (file, dryRun) => {
+    const body = new FormData();
+    body.append('file', file);
+    body.append('dry_run', dryRun ? '1' : '0');
+    const response = await apiFetch(`/api/sellers/${id}/import_items/`, { method: 'POST', body });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const details = data.details || [];
+      const shown = details.slice(0, 15).join('\n');
+      const more = details.length > 15 ? `\n… und ${details.length - 15} weitere` : '';
+      throw new Error((data.error || 'Import fehlgeschlagen') + (shown ? `\n\n${shown}${more}` : ''));
+    }
+    return data;
+  };
+
+  // Check the file first and let the user confirm what will be created.
+  const importItemList = async (file) => {
+    setImporting(true);
+    try {
+      const preview = await uploadItemList(file, true);
+      const categories = Object.entries(preview.categories)
+        .map(([category, count]) => `• ${category}: ${count}`)
+        .join('\n');
+      const warnings = preview.warnings.length
+        ? `\n\nHinweise:\n${preview.warnings.slice(0, 15).map((w) => `• ${w}`).join('\n')}`
+          + (preview.warnings.length > 15 ? `\n… und ${preview.warnings.length - 15} weitere` : '')
+        : '';
+      const summary = `${preview.count} Artikel gefunden (${preview.first_barcode} bis ${preview.last_barcode}):\n`
+        + `${categories}${warnings}\n\nJetzt importieren?`;
+      if (!window.confirm(summary)) return;
+
+      const result = await uploadItemList(file, false);
+      await fetchSellerAndItems();
+      alert(`${result.created} Artikel importiert.`);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setImporting(false);
+      // Allow picking the same file again after fixing it.
+      if (importInputRef.current) importInputRef.current.value = '';
     }
   };
 
@@ -143,6 +188,25 @@ function SellerItemsView() {
             <Link to={`/inventory/sellers/${id}/edit`} className="btn btn-secondary" style={{marginLeft: '0.5rem'}}>
               Verkäufer bearbeiten
             </Link>
+            {seller?.is_major_seller && acceptanceOpen && (
+              <>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  style={{display: 'none'}}
+                  onChange={(e) => e.target.files[0] && importItemList(e.target.files[0])}
+                />
+                <button
+                  onClick={() => importInputRef.current?.click()}
+                  className="btn btn-secondary"
+                  style={{marginLeft: '0.5rem'}}
+                  disabled={importing}
+                >
+                  {importing ? 'Importiert…' : 'Artikel aus Excel importieren'}
+                </button>
+              </>
+            )}
             {pendingItemIds.length > 0 && acceptanceOpen && (
               <button
                 onClick={() => acceptItems(pendingItemIds)}
