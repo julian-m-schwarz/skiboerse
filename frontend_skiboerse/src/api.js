@@ -2,6 +2,8 @@
 // In production: frontend is served by the same server, so use relative paths
 const API_BASE = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8000';
 
+export const SESSION_ENDED_KEY = 'skiboerse_session_ended';
+
 function getCSRFToken() {
   const name = 'csrftoken';
   const cookies = document.cookie.split(';');
@@ -33,6 +35,16 @@ export async function apiFetch(path, options = {}) {
     headers,
     credentials: 'include',
   });
+
+  // The server logged this device out because the user is signed in
+  // elsewhere; the login page tells the user why.
+  if (response.headers.get('X-Session-Ended') === 'replaced') {
+    try {
+      sessionStorage.setItem(SESSION_ENDED_KEY, 'replaced');
+    } catch {
+      // Without storage the login page just shows no reason.
+    }
+  }
 
   if (response.status === 403 || response.status === 401) {
     if (!path.startsWith('/api/auth/')) {

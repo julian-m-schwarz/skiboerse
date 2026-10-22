@@ -1,10 +1,24 @@
 import React, { useState } from 'react';
 import { useAuth } from '../AuthContext';
+import { SESSION_ENDED_KEY } from '../api';
+
+// Read once, so the notice does not come back on the next visit.
+function takeSessionEndedNotice() {
+  try {
+    const reason = sessionStorage.getItem(SESSION_ENDED_KEY);
+    sessionStorage.removeItem(SESSION_ENDED_KEY);
+    return reason === 'replaced'
+      ? 'Sie wurden abgemeldet, weil sich dieser Benutzer auf einem anderen Gerät angemeldet hat.'
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(takeSessionEndedNotice);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 

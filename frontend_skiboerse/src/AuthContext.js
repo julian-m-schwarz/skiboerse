@@ -7,6 +7,11 @@ const AuthContext = createContext(null);
 const TAB_ID = `tab_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 const TAB_CHANNEL_NAME = 'skiboerse_tab_channel';
 
+// Keeps this device's session marked as in use. Must stay well below the
+// server's SESSION_IDLE_TIMEOUT (3 min), also when the browser throttles
+// timers in a background tab to once a minute.
+const HEARTBEAT_MS = 60 * 1000;
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -80,6 +85,24 @@ export function AuthProvider({ children }) {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [user, duplicateTab, logoutOnClose]);
+
+  // Heartbeat while logged in. Only reacts to a lost session, so the rest
+  // of the app does not re-render every minute.
+  useEffect(() => {
+    if (!user || duplicateTab) return;
+
+    const id = setInterval(async () => {
+      try {
+        const response = await apiFetch('/api/auth/session/');
+        const data = await response.json();
+        if (!data.isAuthenticated) setUser(null);
+      } catch {
+        // Network hiccup: keep the user, the next beat tries again.
+      }
+    }, HEARTBEAT_MS);
+
+    return () => clearInterval(id);
+  }, [user, duplicateTab]);
 
   // Check session on mount (if not duplicate tab)
   useEffect(() => {

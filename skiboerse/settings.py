@@ -55,6 +55,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "skiboerse.single_session.SingleSessionMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -153,6 +154,9 @@ CORS_ALLOWED_ORIGINS = (
 )
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Lets the dev frontend (other origin) tell why a session ended.
+CORS_EXPOSE_HEADERS = ["X-Session-Ended"]
 
 # Tell Django it's behind an HTTPS reverse proxy (nginx)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

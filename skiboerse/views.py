@@ -12,6 +12,9 @@ from django.views.generic import TemplateView
 from django.utils import timezone
 from django.contrib.auth.models import User
 from .models import Seller, Item, Sale, UserProfile
+from .single_session import (
+    get_profile, has_active_session, register_session, clear_session, end_session, replace_session,
+)
 from .serializers import SellerSerializer, ItemSerializer, ItemBarcodeSerializer, SaleSerializer, UserWithRoleSerializer
 
 
@@ -549,17 +552,25 @@ def login_view(request):
                     status=status.HTTP_403_FORBIDDEN
                 )
 
-        # Delete any existing sessions for this user to allow re-login
-        # without O(N) scan of all sessions
-        user_id_str = str(user.id)
-        for session in Session.objects.filter(expire_date__gt=timezone.now()).iterator():
-            try:
-                if session.get_decoded().get('_auth_user_id') == user_id_str:
-                    session.delete()
-            except Exception:
-                continue
+        # Only one device per user. The lock on the profile keeps two logins
+        # arriving at the same moment from both getting through.
+        with transaction.atomic():
+            profile = get_profile(user, for_update=True)
+            own_session = profile.session_key and profile.session_key == request.session.session_key
+            if not own_session and has_active_session(profile):
+                return Response(
+                    {'error': 'Dieser Benutzer ist bereits auf einem anderen Gerät angemeldet. '
+                              'Bitte dort zuerst abmelden oder in ein paar Minuten erneut versuchen.'},
+                    status=status.HTTP_409_CONFLICT
+                )
 
-        login(request, user)
+            previous_key = profile.session_key
+            login(request, user)
+            if previous_key != request.session.session_key:
+                # The old device went quiet; make sure it cannot come back.
+                replace_session(previous_key)
+            register_session(profile, request.session.session_key)
+
         return Response({'username': user.username})
     else:
         return Response(
@@ -572,6 +583,10 @@ def login_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def logout_view(request):
+    if request.user.is_authenticated:
+        profile = get_profile(request.user)
+        if profile.session_key == request.session.session_key:
+            clear_session(profile)
     logout(request)
     return Response({'success': True})
 
@@ -738,7 +753,7 @@ def return_check_toggle(request):
                 if user_id:
                     u = User.objects.get(pk=user_id)
                     if u.profile.role == 'reporter':
-                        session.delete()
+                        end_session(session.session_key)
             except Exception:
                 continue
 

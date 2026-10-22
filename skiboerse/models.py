@@ -15,6 +15,10 @@ class UserProfile(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='desk')
+    # The one session allowed to act as this user, and when it was last used.
+    # See single_session.py.
+    session_key = models.CharField(max_length=40, blank=True, default='')
+    last_seen = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username} ({self.get_role_display()})"
